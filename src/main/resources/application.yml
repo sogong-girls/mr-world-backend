@@ -1,17 +1,9 @@
-server:
-    port: 8080
-    servlet:
-        context-path: /
-    compression:
-        enabled: true
-        min-response-size: 1024
-    error:
-        include-message: always
-        include-binding-errors: always
-
 spring:
     application:
         name: mr_world
+
+    config:
+        import: optional:file:.env[.properties]
 
     # JPA/Hibernate Configuration
     jpa:
@@ -33,7 +25,7 @@ spring:
         hikari:
             maximum-pool-size: 10
 
-    # Servlet Configuration
+    # Servlet Configuration (Spring)
     servlet:
         multipart:
             max-file-size: 10
@@ -43,6 +35,18 @@ spring:
     jackson:
         default-property-inclusion: non_null
         time-zone: Asia/Seoul
+
+# Internal Server Configuration
+server:
+    port: 8080
+    servlet:
+        context-path: /
+    compression:
+        enabled: true
+        min-response-size: 1024
+    error:
+        include-message: always
+        include-binding-errors: always
 
 # Logging Configuration
 logging:
