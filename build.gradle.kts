@@ -19,7 +19,12 @@ repositories {
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
+	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0")
+
+	implementation("jakarta.persistence:jakarta.persistence-api:3.2.0")
+	implementation("jakarta.validation:jakarta.validation-api:3.1.0")
+
 	// implementation("org.springframework.boot:spring-boot-starter-security")
 
 	compileOnly("org.projectlombok:lombok")
