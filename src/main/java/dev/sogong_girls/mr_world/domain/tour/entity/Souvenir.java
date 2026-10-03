@@ -21,6 +21,7 @@ public class Souvenir {
 
     @Column(nullable = false)
     private String name;
+
     private String brand;
 
     private String description;

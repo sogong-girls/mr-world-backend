@@ -42,5 +42,5 @@ public class User {
     private String address;
 
     @Column(name = "is_regular")
-    private Boolean regular = false;
+    private Boolean isRegular = false;
 }

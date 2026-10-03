@@ -3,8 +3,6 @@ package dev.sogong_girls.mr_world.domain.booking.entity;
 import java.time.LocalDateTime;
 
 import dev.sogong_girls.mr_world.domain.booking.enums.TourStatus;
-import dev.sogong_girls.mr_world.domain.tour.entity.FoodOption;
-import dev.sogong_girls.mr_world.domain.tour.entity.HotelOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.Tour;
 import dev.sogong_girls.mr_world.domain.tour.entity.TourStyle;
 import dev.sogong_girls.mr_world.domain.user.entity.User;
@@ -44,13 +42,11 @@ public class Booking {
     @JoinColumn(name = "tour_style_id", nullable = false)
     private TourStyle tourStyle;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "hotel_option_id", nullable = false)
-    private HotelOption hotelOption;
+    @Column(name = "hotel_option_id", nullable = false)
+    private Long hotelOptionId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "food_option_id", nullable = false)
-    private FoodOption foodOption;
+    @Column(name = "food_option_id", nullable = false)
+    private Long foodOptionId;
 
     @Column(name = "total_price", nullable = false)
     private Integer totalPrice;
