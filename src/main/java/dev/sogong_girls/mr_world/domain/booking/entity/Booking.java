@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 import dev.sogong_girls.mr_world.domain.booking.enums.TourStatus;
 import dev.sogong_girls.mr_world.domain.tour.entity.Tour;
-import dev.sogong_girls.mr_world.domain.tour.entity.TourStyle;
+import dev.sogong_girls.mr_world.domain.tour.enums.TourStyleType;
 import dev.sogong_girls.mr_world.domain.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -38,9 +38,12 @@ public class Booking {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "tour_style_id", nullable = false)
-    private TourStyle tourStyle;
+    @Column(name = "tour_style_id", nullable = false)
+    private Long tourStyleId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tour_style_type", nullable = false)
+    private TourStyleType tourStyleType;
 
     @Column(name = "hotel_option_id", nullable = false)
     private Long hotelOptionId;
