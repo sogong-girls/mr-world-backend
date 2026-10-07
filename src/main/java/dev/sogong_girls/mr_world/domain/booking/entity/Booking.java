@@ -3,6 +3,8 @@ package dev.sogong_girls.mr_world.domain.booking.entity;
 import java.time.LocalDateTime;
 
 import dev.sogong_girls.mr_world.domain.booking.enums.TourStatus;
+import dev.sogong_girls.mr_world.domain.tour.entity.FoodOption;
+import dev.sogong_girls.mr_world.domain.tour.entity.HotelOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.Tour;
 import dev.sogong_girls.mr_world.domain.tour.enums.TourStyleType;
 import dev.sogong_girls.mr_world.domain.user.entity.User;
@@ -34,9 +36,8 @@ public class Booking {
     @JoinColumn(name = "tour_id", nullable = false)
     private Tour tour;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private User userId;
 
     @Column(name = "tour_style_id", nullable = false)
     private Long tourStyleId;
@@ -45,17 +46,25 @@ public class Booking {
     @Column(name = "tour_style_type", nullable = false)
     private TourStyleType tourStyleType;
 
-    @Column(name = "hotel_option_id", nullable = false)
-    private Long hotelOptionId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "hotel_option_id", nullable = false)
+    private HotelOption hotelOption;
 
-    @Column(name = "food_option_id", nullable = false)
-    private Long foodOptionId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "food_option_id", nullable = false)
+    private FoodOption foodOption;
 
     @Column(name = "total_price", nullable = false)
     private Integer totalPrice;
 
     @Column(name = "discount_price")
     private Integer discountPrice;
+
+    @Column(name = "payment_due_at", nullable = false)
+    private LocalDateTime paymentDueAt;
+
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
 
     @Column(name = "participants_count", nullable = false)
     private Integer participantsCount;
@@ -73,6 +82,7 @@ public class Booking {
     private Integer days;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private TourStatus status;
 
     @Column(name = "created_at")

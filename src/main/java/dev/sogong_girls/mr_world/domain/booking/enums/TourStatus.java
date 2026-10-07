@@ -4,7 +4,6 @@ public enum TourStatus {
     BOOKED,
     DEPARTED,
     ARRIVED,
-    CANCELED,
     PENDING,
     CONFIRMED
 }
