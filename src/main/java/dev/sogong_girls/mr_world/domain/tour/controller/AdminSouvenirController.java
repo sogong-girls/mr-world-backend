@@ -17,14 +17,12 @@ import dev.sogong_girls.mr_world.domain.tour.dto.SouvenirUpdateRequest;
 import dev.sogong_girls.mr_world.domain.tour.dto.StockUpdateRequest;
 import dev.sogong_girls.mr_world.domain.tour.service.AdminSouvenirService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
+@RequiredArgsConstructor
 public class AdminSouvenirController {
     private final AdminSouvenirService service;
-
-    public AdminSouvenirController(AdminSouvenirService service) {
-        this.service = service;
-    }
 
     @GetMapping("/api/admin/souvenirs")
     public List<SouvenirResponse> getSouvenirList() {

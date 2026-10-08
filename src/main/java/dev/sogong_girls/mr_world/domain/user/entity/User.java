@@ -1,13 +1,19 @@
 package dev.sogong_girls.mr_world.domain.user.entity;
 
+import java.util.List;
+
+import dev.sogong_girls.mr_world.domain.booking.entity.Booking;
 import dev.sogong_girls.mr_world.domain.user.enums.Role;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -43,4 +49,8 @@ public class User {
 
     @Column(name = "is_regular")
     private Boolean isRegular = false;
+
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private List<Booking> bookings;
 }

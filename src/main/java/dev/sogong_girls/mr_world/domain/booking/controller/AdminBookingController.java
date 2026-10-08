@@ -11,16 +11,15 @@ import org.springframework.web.bind.annotation.RestController;
 import dev.sogong_girls.mr_world.domain.booking.dto.BookingDetailResponse;
 import dev.sogong_girls.mr_world.domain.booking.dto.BookingResponse;
 import dev.sogong_girls.mr_world.domain.booking.dto.BookingStatusUpdateRequest;
+import dev.sogong_girls.mr_world.domain.booking.dto.SmsNotificationResponse;
 import dev.sogong_girls.mr_world.domain.booking.service.AdminBookingService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
+@RequiredArgsConstructor
 public class AdminBookingController {
     private final AdminBookingService service;
-
-    public AdminBookingController(AdminBookingService service) {
-        this.service = service;
-    }
 
     @GetMapping("/api/admin/bookings")
     public List<BookingResponse> getAllBookingList() {
@@ -36,5 +35,10 @@ public class AdminBookingController {
     public BookingResponse updateAdminBookingStatus(@PathVariable("id") Long id,
             @Valid @RequestBody BookingStatusUpdateRequest request) {
         return service.updateAdminBookingStatus(id, request);
+    }
+
+    @GetMapping("/api/admin/bookings/sms-notifications")
+    public List<SmsNotificationResponse> getSmsNotificationList() {
+        return service.getSmsNotificationList();
     }
 }

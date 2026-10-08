@@ -14,14 +14,12 @@ import dev.sogong_girls.mr_world.domain.tour.dto.TourDetailResponse;
 import dev.sogong_girls.mr_world.domain.tour.dto.TourResponse;
 import dev.sogong_girls.mr_world.domain.tour.service.TourService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
+@RequiredArgsConstructor
 public class TourController {
     private final TourService service;
-
-    public TourController(TourService service) {
-        this.service = service;
-    }
 
     @GetMapping("/api/tours")
     public List<TourResponse> getTourList() {

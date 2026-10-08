@@ -1,11 +1,18 @@
 package dev.sogong_girls.mr_world.domain.tour.service;
 
+import org.springframework.stereotype.Service;
+
+import dev.sogong_girls.mr_world.domain.tour.dto.AddonOptionRequest;
+import dev.sogong_girls.mr_world.domain.tour.dto.AddonOptionResponse;
+import dev.sogong_girls.mr_world.domain.tour.dto.FoodOptionRequest;
+import dev.sogong_girls.mr_world.domain.tour.dto.FoodOptionResponse;
+import dev.sogong_girls.mr_world.domain.tour.dto.HotelOptionRequest;
+import dev.sogong_girls.mr_world.domain.tour.dto.HotelOptionResponse;
 import dev.sogong_girls.mr_world.domain.tour.dto.TourCreateRequest;
 import dev.sogong_girls.mr_world.domain.tour.dto.TourResponse;
 import dev.sogong_girls.mr_world.domain.tour.dto.TourStyleRequest;
 import dev.sogong_girls.mr_world.domain.tour.dto.TourStyleResponse;
 import dev.sogong_girls.mr_world.domain.tour.dto.TourUpdateRequest;
-import org.springframework.stereotype.Service;
 
 @Service
 public class AdminTourService {
@@ -27,5 +34,21 @@ public class AdminTourService {
 
     public TourStyleResponse updateTourStyle(Long id, TourStyleRequest request) {
         throw new UnsupportedOperationException("updateTourStyle is not implemented yet");
+    }
+
+    public void deleteTourStyle(Long id) {
+        throw new UnsupportedOperationException("deleteTourStyle is not implemented yet");
+    }
+
+    public HotelOptionResponse createHotelOption(Long id, HotelOptionRequest request) {
+        throw new UnsupportedOperationException("createHotelOption is not implemented yet");
+    }
+
+    public FoodOptionResponse createFoodOption(Long id, FoodOptionRequest request) {
+        throw new UnsupportedOperationException("createFoodOption is not implemented yet");
+    }
+
+    public AddonOptionResponse createAddonOption(Long id, AddonOptionRequest request) {
+        throw new UnsupportedOperationException("createAddonOption is not implemented yet");
     }
 }

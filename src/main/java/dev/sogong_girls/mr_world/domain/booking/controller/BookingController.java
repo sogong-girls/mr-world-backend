@@ -18,14 +18,12 @@ import dev.sogong_girls.mr_world.domain.booking.dto.BookingResponse;
 import dev.sogong_girls.mr_world.domain.booking.dto.BookingStatusUpdateRequest;
 import dev.sogong_girls.mr_world.domain.booking.service.BookingService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
+@RequiredArgsConstructor
 public class BookingController {
     private final BookingService service;
-
-    public BookingController(BookingService service) {
-        this.service = service;
-    }
 
     @PostMapping("/api/bookings")
     @ResponseStatus(HttpStatus.CREATED)
