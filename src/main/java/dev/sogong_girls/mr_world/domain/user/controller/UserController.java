@@ -2,6 +2,7 @@ package dev.sogong_girls.mr_world.domain.user.controller;
 
 import java.util.List;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,17 +21,17 @@ public class UserController {
     private final UserService service;
 
     @GetMapping("/api/users/me")
-    public UserResponse getUser() {
-        return service.getUser();
+    public ResponseEntity<UserResponse> getUser() {
+        return ResponseEntity.ok(service.getUser());
     }
 
     @PatchMapping("/api/users/me")
-    public UserResponse updateUser(@Valid @RequestBody UserUpdateRequest request) {
-        return service.updateUser(request);
+    public ResponseEntity<UserResponse> updateUser(@Valid @RequestBody UserUpdateRequest request) {
+        return ResponseEntity.ok(service.updateUser(request));
     }
 
     @GetMapping("/api/users/me/bookings")
-    public List<BookingResponse> getBookingList() {
-        return service.getBookingList();
+    public ResponseEntity<List<BookingResponse>> getBookingList() {
+        return ResponseEntity.ok(service.getBookingList());
     }
 }

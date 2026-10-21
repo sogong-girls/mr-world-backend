@@ -1,9 +1,9 @@
 package dev.sogong_girls.mr_world.domain.user.controller;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.sogong_girls.mr_world.domain.user.dto.LoginRequest;
@@ -20,18 +20,18 @@ public class AuthController {
     private final AuthService service;
 
     @PostMapping("/api/auth/signup")
-    @ResponseStatus(HttpStatus.CREATED)
-    public UserResponse signup(@Valid @RequestBody SignupRequest request) {
-        return service.signup(request);
+    public ResponseEntity<UserResponse> signup(@Valid @RequestBody SignupRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.signup(request));
     }
 
     @PostMapping("/api/auth/login")
-    public LoginResponse login(@Valid @RequestBody LoginRequest request) {
-        return service.login(request);
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(service.login(request));
     }
 
     @PostMapping("/api/auth/logout")
-    public void logout() {
+    public ResponseEntity<Void> logout() {
         service.logout();
+        return ResponseEntity.ok().build();
     }
 }

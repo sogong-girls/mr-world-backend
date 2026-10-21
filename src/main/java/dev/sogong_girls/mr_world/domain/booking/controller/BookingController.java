@@ -1,11 +1,11 @@
 package dev.sogong_girls.mr_world.domain.booking.controller;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.sogong_girls.mr_world.domain.booking.dto.BookingCreateRequest;
@@ -22,19 +22,18 @@ public class BookingController {
     private final BookingService service;
 
     @PostMapping("/api/bookings")
-    @ResponseStatus(HttpStatus.CREATED)
-    public BookingDetailResponse createBooking(@Valid @RequestBody BookingCreateRequest request) {
-        return service.createBooking(request);
+    public ResponseEntity<BookingDetailResponse> createBooking(@Valid @RequestBody BookingCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.createBooking(request));
     }
 
     @PatchMapping("/api/bookings/{id}/options")
-    public BookingDetailResponse updateBookingOptions(@PathVariable("id") Long id,
+    public ResponseEntity<BookingDetailResponse> updateBookingOptions(@PathVariable("id") Long id,
             @Valid @RequestBody BookingOptionUpdateRequest request) {
-        return service.updateBookingOptions(id, request);
+        return ResponseEntity.ok(service.updateBookingOptions(id, request));
     }
 
     @PostMapping("/api/bookings/{id}/payments")
-    public BookingResponse payBooking(@PathVariable("id") Long id) {
-        return service.payBooking(id);
+    public ResponseEntity<BookingResponse> payBooking(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(service.payBooking(id));
     }
 }

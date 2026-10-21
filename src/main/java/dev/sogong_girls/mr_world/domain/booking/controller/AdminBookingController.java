@@ -2,6 +2,7 @@ package dev.sogong_girls.mr_world.domain.booking.controller;
 
 import java.util.List;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,23 +23,23 @@ public class AdminBookingController {
     private final AdminBookingService service;
 
     @GetMapping("/api/admin/bookings")
-    public List<BookingResponse> getAllBookingList() {
-        return service.getAllBookingList();
+    public ResponseEntity<List<BookingResponse>> getAllBookingList() {
+        return ResponseEntity.ok(service.getAllBookingList());
     }
 
     @GetMapping("/api/admin/bookings/{id}")
-    public BookingDetailResponse getAdminBooking(@PathVariable("id") Long id) {
-        return service.getAdminBooking(id);
+    public ResponseEntity<BookingDetailResponse> getAdminBooking(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(service.getAdminBooking(id));
     }
 
     @PatchMapping("/api/admin/bookings/{id}/status")
-    public BookingResponse updateAdminBookingStatus(@PathVariable("id") Long id,
+    public ResponseEntity<BookingResponse> updateAdminBookingStatus(@PathVariable("id") Long id,
             @Valid @RequestBody BookingStatusUpdateRequest request) {
-        return service.updateAdminBookingStatus(id, request);
+        return ResponseEntity.ok(service.updateAdminBookingStatus(id, request));
     }
 
     @GetMapping("/api/admin/bookings/sms-notifications")
-    public List<SmsNotificationResponse> getSmsNotificationList() {
-        return service.getSmsNotificationList();
+    public ResponseEntity<List<SmsNotificationResponse>> getSmsNotificationList() {
+        return ResponseEntity.ok(service.getSmsNotificationList());
     }
 }
