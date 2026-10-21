@@ -23,7 +23,7 @@ public class AddonOption {
     private Long id;
 
     @Column(name = "tour_id", nullable = false)
-    private Tour tourId;
+    private Long tourId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
