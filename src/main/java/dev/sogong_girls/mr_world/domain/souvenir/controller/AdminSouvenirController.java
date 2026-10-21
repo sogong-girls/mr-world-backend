@@ -1,4 +1,4 @@
-package dev.sogong_girls.mr_world.domain.tour.controller;
+package dev.sogong_girls.mr_world.domain.souvenir.controller;
 
 import java.util.List;
 
@@ -11,11 +11,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import dev.sogong_girls.mr_world.domain.tour.dto.SouvenirCreateRequest;
-import dev.sogong_girls.mr_world.domain.tour.dto.SouvenirResponse;
-import dev.sogong_girls.mr_world.domain.tour.dto.SouvenirUpdateRequest;
-import dev.sogong_girls.mr_world.domain.tour.dto.StockUpdateRequest;
-import dev.sogong_girls.mr_world.domain.tour.service.AdminSouvenirService;
+import dev.sogong_girls.mr_world.domain.souvenir.dto.SouvenirCreateRequest;
+import dev.sogong_girls.mr_world.domain.souvenir.dto.SouvenirResponse;
+import dev.sogong_girls.mr_world.domain.souvenir.dto.SouvenirUpdateRequest;
+import dev.sogong_girls.mr_world.domain.souvenir.dto.StockUpdateRequest;
+import dev.sogong_girls.mr_world.domain.souvenir.service.AdminSouvenirService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 

@@ -8,13 +8,11 @@ import org.mapstruct.ReportingPolicy;
 import dev.sogong_girls.mr_world.domain.tour.dto.AddonOptionResponse;
 import dev.sogong_girls.mr_world.domain.tour.dto.FoodOptionResponse;
 import dev.sogong_girls.mr_world.domain.tour.dto.HotelOptionResponse;
-import dev.sogong_girls.mr_world.domain.tour.dto.SouvenirResponse;
 import dev.sogong_girls.mr_world.domain.tour.dto.TourResponse;
 import dev.sogong_girls.mr_world.domain.tour.dto.TourStyleResponse;
 import dev.sogong_girls.mr_world.domain.tour.entity.AddonOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.FoodOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.HotelOption;
-import dev.sogong_girls.mr_world.domain.tour.entity.Souvenir;
 import dev.sogong_girls.mr_world.domain.tour.entity.Tour;
 import dev.sogong_girls.mr_world.domain.tour.entity.TourStyle;
 
@@ -39,8 +37,4 @@ public interface TourMapper {
     AddonOptionResponse toResponse(AddonOption addonOption);
 
     List<AddonOptionResponse> toAddonOptionResponses(List<AddonOption> addonOptions);
-
-    SouvenirResponse toResponse(Souvenir souvenir);
-
-    List<SouvenirResponse> toSouvenirResponses(List<Souvenir> souvenirs);
 }
