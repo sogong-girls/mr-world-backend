@@ -1,5 +1,7 @@
 package dev.sogong_girls.mr_world.domain.tour.entity;
 
+import java.time.LocalTime;
+
 import dev.sogong_girls.mr_world.domain.tour.enums.TourTheme;
 import dev.sogong_girls.mr_world.domain.tour.enums.TransportType;
 import jakarta.persistence.Column;
@@ -42,6 +44,20 @@ public class Tour {
 
     @Column(name = "souvenir_id", nullable = false)
     private Long souvenirId;
+
+    @Column(name = "n_nights")
+    private Integer nNights;
+
+    @Column(name = "n_days")
+    private Integer nDays;
+
+    @Column(name = "departure_time")
+    private LocalTime departureTime;
+
+    @Column(name = "arrival_time")
+    private LocalTime arrivalTime;
+
+    private String course;
 
     private String description;
 }
