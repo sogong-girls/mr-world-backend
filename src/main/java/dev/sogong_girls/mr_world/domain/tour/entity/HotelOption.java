@@ -43,12 +43,26 @@ public class HotelOption {
 
     @Builder
     public HotelOption(Long tourId, String name, String location, HotelGrade grade,
-                       Integer price, String description) {
+            Integer price, String description) {
         this.tourId = tourId;
         this.name = name;
         this.location = location;
         this.grade = grade;
         this.price = price;
         this.description = description;
+    }
+
+    public void updateInfo(String name, String location, HotelGrade grade,
+            Integer price, String description) {
+        if (name != null)
+            this.name = name;
+        if (location != null)
+            this.location = location;
+        if (grade != null)
+            this.grade = grade;
+        if (price != null)
+            this.price = price;
+        if (description != null)
+            this.description = description;
     }
 }

@@ -46,7 +46,7 @@ public class TourStyle {
 
     @Builder
     public TourStyle(Long tourId, TourStyleType type, Integer basePrice, Float regularDiscount,
-                     Long hotelOptionId, Long foodOptionId, String description) {
+            Long hotelOptionId, Long foodOptionId, String description) {
         this.tourId = tourId;
         this.type = type;
         this.basePrice = basePrice;
@@ -54,5 +54,21 @@ public class TourStyle {
         this.hotelOptionId = hotelOptionId;
         this.foodOptionId = foodOptionId;
         this.description = description;
+    }
+
+    public void updateInfo(TourStyleType type, Integer basePrice, Float regularDiscount,
+            Long hotelOptionId, Long foodOptionId, String description) {
+        if (type != null)
+            this.type = type;
+        if (basePrice != null)
+            this.basePrice = basePrice;
+        if (regularDiscount != null)
+            this.regularDiscount = regularDiscount;
+        if (hotelOptionId != null)
+            this.hotelOptionId = hotelOptionId;
+        if (foodOptionId != null)
+            this.foodOptionId = foodOptionId;
+        if (description != null)
+            this.description = description;
     }
 }

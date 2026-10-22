@@ -46,4 +46,15 @@ public class FoodOption {
         this.price = price;
         this.description = description;
     }
+
+    public void updateInfo(String name, FoodType type, Integer price, String description) {
+        if (name != null)
+            this.name = name;
+        if (type != null)
+            this.type = type;
+        if (price != null)
+            this.price = price;
+        if (description != null)
+            this.description = description;
+    }
 }

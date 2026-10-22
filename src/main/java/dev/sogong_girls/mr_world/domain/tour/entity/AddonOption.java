@@ -42,4 +42,13 @@ public class AddonOption {
         this.price = price;
         this.description = description;
     }
+
+    public void updateInfo(AddonType type, Integer price, String description) {
+        if (type != null)
+            this.type = type;
+        if (price != null)
+            this.price = price;
+        if (description != null)
+            this.description = description;
+    }
 }

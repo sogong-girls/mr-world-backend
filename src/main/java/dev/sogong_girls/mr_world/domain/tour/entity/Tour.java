@@ -79,4 +79,33 @@ public class Tour {
         this.course = course;
         this.description = description;
     }
+
+    public void updateInfo(String name, String departure, String destination, TourTheme tourTheme,
+            TransportType transportType, Long souvenirId, Integer nights, Integer days,
+            LocalTime departureTime, LocalTime arrivalTime, String course, String description) {
+        if (name != null)
+            this.name = name;
+        if (departure != null)
+            this.departure = departure;
+        if (destination != null)
+            this.destination = destination;
+        if (tourTheme != null)
+            this.tourTheme = tourTheme;
+        if (transportType != null)
+            this.transportType = transportType;
+        if (souvenirId != null)
+            this.souvenirId = souvenirId;
+        if (nights != null)
+            this.nights = nights;
+        if (days != null)
+            this.days = days;
+        if (departureTime != null)
+            this.departureTime = departureTime;
+        if (arrivalTime != null)
+            this.arrivalTime = arrivalTime;
+        if (course != null)
+            this.course = course;
+        if (description != null)
+            this.description = description;
+    }
 }
