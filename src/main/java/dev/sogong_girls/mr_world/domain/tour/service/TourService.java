@@ -54,7 +54,7 @@ public class TourService {
         return new TourDetailResponse(
                 tour.getId(), tour.getName(), tour.getDeparture(), tour.getDestination(),
                 tour.getTourTheme(), tour.getTransportType(), tour.getSouvenirId(),
-                tour.getNNights(), tour.getNDays(), tour.getDepartureTime(), tour.getArrivalTime(),
+                tour.getNights(), tour.getDays(), tour.getDepartureTime(), tour.getArrivalTime(),
                 tour.getCourse(), tour.getDescription(),
                 styles, hotelOptions, foodOptions, addonOptions);
     }

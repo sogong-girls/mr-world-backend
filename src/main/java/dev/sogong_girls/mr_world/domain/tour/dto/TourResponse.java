@@ -8,6 +8,6 @@ public record TourResponse(
                 String departure,
                 String destination,
                 TourTheme tourTheme,
-                Integer nNights,
-                Integer nDays) {
+                Integer nights,
+                Integer days) {
 }

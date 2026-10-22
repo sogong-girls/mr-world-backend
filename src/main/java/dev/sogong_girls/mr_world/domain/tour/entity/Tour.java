@@ -47,10 +47,10 @@ public class Tour {
     private Long souvenirId;
 
     @Column(name = "n_nights")
-    private Integer nNights;
+    private Integer nights;
 
     @Column(name = "n_days")
-    private Integer nDays;
+    private Integer days;
 
     @Column(name = "departure_time")
     private LocalTime departureTime;
@@ -64,16 +64,16 @@ public class Tour {
 
     @Builder
     public Tour(String name, String departure, String destination, TourTheme tourTheme,
-                TransportType transportType, Long souvenirId, Integer nNights, Integer nDays,
-                LocalTime departureTime, LocalTime arrivalTime, String course, String description) {
+            TransportType transportType, Long souvenirId, Integer nights, Integer days,
+            LocalTime departureTime, LocalTime arrivalTime, String course, String description) {
         this.name = name;
         this.departure = departure;
         this.destination = destination;
         this.tourTheme = tourTheme;
         this.transportType = transportType;
         this.souvenirId = souvenirId;
-        this.nNights = nNights;
-        this.nDays = nDays;
+        this.nights = nights;
+        this.days = days;
         this.departureTime = departureTime;
         this.arrivalTime = arrivalTime;
         this.course = course;

@@ -34,17 +34,17 @@ public class BookingAddon {
     @JoinColumn(name = "addon_option_id", nullable = false)
     private AddonOption addonOption;
 
-    @Column(name = "n_day")
-    private Integer nDay;
+    @Column(name = "nth_day")
+    private Integer nthDay;
 
     @Enumerated(EnumType.STRING)
     private Meal meal;
 
     @Builder
-    public BookingAddon(Long bookingId, AddonOption addonOption, Integer nDay, Meal meal) {
+    public BookingAddon(Long bookingId, AddonOption addonOption, Integer nthDay, Meal meal) {
         this.bookingId = bookingId;
         this.addonOption = addonOption;
-        this.nDay = nDay;
+        this.nthDay = nthDay;
         this.meal = meal;
     }
 }

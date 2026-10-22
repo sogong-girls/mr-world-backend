@@ -82,10 +82,10 @@ public class Booking {
     private LocalDateTime endAt;
 
     @Column(name = "n_nights")
-    private Integer nNights;
+    private Integer nights;
 
     @Column(name = "n_days")
-    private Integer nDays;
+    private Integer days;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -99,7 +99,7 @@ public class Booking {
             HotelOption hotelOption, FoodOption foodOption, List<BookingAddon> bookingAddons,
             Integer totalPrice, Integer discountPrice, LocalDateTime paymentDueAt,
             LocalDateTime paidAt, Integer participantsCount, LocalDateTime startAt,
-            LocalDateTime endAt, Integer nNights, Integer nDays, TourStatus status) {
+            LocalDateTime endAt, Integer nights, Integer days, TourStatus status) {
         this.tour = tour;
         this.userId = userId;
         this.tourStyleId = tourStyleId;
@@ -114,8 +114,8 @@ public class Booking {
         this.participantsCount = participantsCount;
         this.startAt = startAt;
         this.endAt = endAt;
-        this.nNights = nNights;
-        this.nDays = nDays;
+        this.nights = nights;
+        this.days = days;
         this.status = status;
     }
 }

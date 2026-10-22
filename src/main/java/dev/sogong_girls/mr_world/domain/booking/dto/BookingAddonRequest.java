@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 public record BookingAddonRequest(
-    @NotNull Long addonOptionId,
-    @NotNull @Min(1) Integer day,
-    @NotNull Meal meal
-) {}
+                @NotNull Long addonOptionId,
+                @NotNull @Min(1) Integer nthDay,
+                @NotNull Meal meal) {
+}
