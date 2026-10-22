@@ -21,6 +21,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -81,15 +82,40 @@ public class Booking {
     private LocalDateTime endAt;
 
     @Column(name = "n_nights")
-    private Integer nights;
+    private Integer nNights;
 
     @Column(name = "n_days")
-    private Integer days;
+    private Integer nDays;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TourStatus status;
 
     @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    private final LocalDateTime createdAt = LocalDateTime.now();
+
+    @Builder
+    public Booking(Tour tour, Long userId, Long tourStyleId, TourStyleType tourStyleType,
+            HotelOption hotelOption, FoodOption foodOption, List<BookingAddon> bookingAddons,
+            Integer totalPrice, Integer discountPrice, LocalDateTime paymentDueAt,
+            LocalDateTime paidAt, Integer participantsCount, LocalDateTime startAt,
+            LocalDateTime endAt, Integer nNights, Integer nDays, TourStatus status) {
+        this.tour = tour;
+        this.userId = userId;
+        this.tourStyleId = tourStyleId;
+        this.tourStyleType = tourStyleType;
+        this.hotelOption = hotelOption;
+        this.foodOption = foodOption;
+        this.bookingAddons = bookingAddons;
+        this.totalPrice = totalPrice;
+        this.discountPrice = discountPrice;
+        this.paymentDueAt = paymentDueAt;
+        this.paidAt = paidAt;
+        this.participantsCount = participantsCount;
+        this.startAt = startAt;
+        this.endAt = endAt;
+        this.nNights = nNights;
+        this.nDays = nDays;
+        this.status = status;
+    }
 }

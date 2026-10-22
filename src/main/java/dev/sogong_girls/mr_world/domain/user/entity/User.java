@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -42,5 +43,17 @@ public class User {
     private String address;
 
     @Column(name = "is_regular")
-    private Boolean isRegular = false;
+    private Boolean isRegular;
+
+    @Builder
+    public User(String loginId, String password, Role role, String name,
+            String phoneNumber, String address) {
+        this.loginId = loginId;
+        this.password = password;
+        this.role = role;
+        this.name = name;
+        this.phoneNumber = phoneNumber;
+        this.address = address;
+        this.isRegular = false;
+    }
 }

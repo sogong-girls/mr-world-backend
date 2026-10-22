@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -30,6 +31,14 @@ public class Souvenir {
 
     @Column(name = "stock_count", nullable = false)
     private Integer stockCount;
+
+    @Builder
+    public Souvenir(String name, String brand, String description, Integer stockCount) {
+        this.name = name;
+        this.brand = brand;
+        this.description = description;
+        this.stockCount = stockCount;
+    }
 
     public void updateInfo(String name, String brand, String description) {
         if (name != null)

@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -31,4 +32,12 @@ public class SmsNotification {
     private LocalDateTime sentAt;
 
     private String message;
+
+    @Builder
+    public SmsNotification(Long bookingId, LocalDateTime sendDue, LocalDateTime sentAt, String message) {
+        this.bookingId = bookingId;
+        this.sendDue = sendDue;
+        this.sentAt = sentAt;
+        this.message = message;
+    }
 }

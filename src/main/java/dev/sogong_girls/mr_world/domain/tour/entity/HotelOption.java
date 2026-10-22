@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -39,4 +40,15 @@ public class HotelOption {
     private Integer price;
 
     private String description;
+
+    @Builder
+    public HotelOption(Long tourId, String name, String location, HotelGrade grade,
+                       Integer price, String description) {
+        this.tourId = tourId;
+        this.name = name;
+        this.location = location;
+        this.grade = grade;
+        this.price = price;
+        this.description = description;
+    }
 }

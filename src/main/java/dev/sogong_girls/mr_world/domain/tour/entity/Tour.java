@@ -13,6 +13,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -60,4 +61,22 @@ public class Tour {
     private String course;
 
     private String description;
+
+    @Builder
+    public Tour(String name, String departure, String destination, TourTheme tourTheme,
+                TransportType transportType, Long souvenirId, Integer nNights, Integer nDays,
+                LocalTime departureTime, LocalTime arrivalTime, String course, String description) {
+        this.name = name;
+        this.departure = departure;
+        this.destination = destination;
+        this.tourTheme = tourTheme;
+        this.transportType = transportType;
+        this.souvenirId = souvenirId;
+        this.nNights = nNights;
+        this.nDays = nDays;
+        this.departureTime = departureTime;
+        this.arrivalTime = arrivalTime;
+        this.course = course;
+        this.description = description;
+    }
 }

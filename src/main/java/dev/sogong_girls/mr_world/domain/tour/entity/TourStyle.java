@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -42,4 +43,16 @@ public class TourStyle {
     private Long foodOptionId;
 
     private String description;
+
+    @Builder
+    public TourStyle(Long tourId, TourStyleType type, Integer basePrice, Float regularDiscount,
+                     Long hotelOptionId, Long foodOptionId, String description) {
+        this.tourId = tourId;
+        this.type = type;
+        this.basePrice = basePrice;
+        this.regularDiscount = regularDiscount;
+        this.hotelOptionId = hotelOptionId;
+        this.foodOptionId = foodOptionId;
+        this.description = description;
+    }
 }

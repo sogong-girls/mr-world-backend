@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -33,4 +34,12 @@ public class AddonOption {
     private Integer price;
 
     private String description;
+
+    @Builder
+    public AddonOption(Long tourId, AddonType type, Integer price, String description) {
+        this.tourId = tourId;
+        this.type = type;
+        this.price = price;
+        this.description = description;
+    }
 }
