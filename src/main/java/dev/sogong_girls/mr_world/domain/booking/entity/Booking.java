@@ -8,6 +8,8 @@ import dev.sogong_girls.mr_world.domain.tour.entity.FoodOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.HotelOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.Tour;
 import dev.sogong_girls.mr_world.domain.tour.enums.TourStyleType;
+import dev.sogong_girls.mr_world.global.exception.BusinessErrorCode;
+import dev.sogong_girls.mr_world.global.exception.BusinessException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -92,30 +94,78 @@ public class Booking {
     private TourStatus status;
 
     @Column(name = "created_at")
-    private final LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
 
     @Builder
     public Booking(Tour tour, Long userId, Long tourStyleId, TourStyleType tourStyleType,
-            HotelOption hotelOption, FoodOption foodOption, List<BookingAddon> bookingAddons,
-            Integer totalPrice, Integer discountPrice, LocalDateTime paymentDueAt,
-            LocalDateTime paidAt, Integer participantsCount, LocalDateTime startAt,
-            LocalDateTime endAt, Integer nights, Integer days, TourStatus status) {
+            HotelOption hotelOption, FoodOption foodOption,
+            Integer totalPrice, Integer discountPrice, Integer participantsCount,
+            LocalDateTime startAt, LocalDateTime endAt,
+            Integer nights, Integer days, TourStatus status) {
         this.tour = tour;
         this.userId = userId;
         this.tourStyleId = tourStyleId;
         this.tourStyleType = tourStyleType;
         this.hotelOption = hotelOption;
         this.foodOption = foodOption;
-        this.bookingAddons = bookingAddons;
         this.totalPrice = totalPrice;
         this.discountPrice = discountPrice;
-        this.paymentDueAt = paymentDueAt;
-        this.paidAt = paidAt;
         this.participantsCount = participantsCount;
         this.startAt = startAt;
         this.endAt = endAt;
         this.nights = nights;
         this.days = days;
         this.status = status;
+        this.createdAt = LocalDateTime.now();
+
+        if (status == TourStatus.CONFIRMED)
+            this.paymentDueAt = createdAt.plusDays(1);
+    }
+
+    public void updateBookingAddons(List<BookingAddon> bookingAddons) {
+        if (bookingAddons != null) {
+            this.bookingAddons = bookingAddons;
+        }
+    }
+
+    public void updateOptions(Long tourStyleId, TourStyleType tourStyleType,
+            HotelOption hotelOption, FoodOption foodOption, Integer totalPrice, Integer discountPrice) {
+        if (tourStyleId != null)
+            this.tourStyleId = tourStyleId;
+        if (tourStyleType != null)
+            this.tourStyleType = tourStyleType;
+        if (hotelOption != null)
+            this.hotelOption = hotelOption;
+        if (foodOption != null)
+            this.foodOption = foodOption;
+        if (totalPrice != null)
+            this.totalPrice = totalPrice;
+        if (discountPrice != null)
+            this.discountPrice = discountPrice;
+    }
+
+    public void updateStatus(TourStatus status) {
+        if (status != null) {
+            this.status = status;
+
+            if (status == TourStatus.CONFIRMED) {
+                this.paymentDueAt = LocalDateTime.now().plusDays(1);
+            }
+        }
+    }
+
+    public void updatePaymentDueAt(LocalDateTime paymentDueAt) {
+        if (paymentDueAt == null)
+            this.paymentDueAt = LocalDateTime.now().plusDays(1);
+        else
+            this.paymentDueAt = paymentDueAt;
+    }
+
+    public void updatePaidAt() {
+        if (this.paidAt == null) {
+            this.paidAt = LocalDateTime.now();
+            this.status = TourStatus.BOOKED;
+        } else
+            throw new BusinessException(BusinessErrorCode.ALREADY_PAID);
     }
 }

@@ -3,6 +3,7 @@ package dev.sogong_girls.mr_world.domain.souvenir.service;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import dev.sogong_girls.mr_world.domain.souvenir.dto.SouvenirCreateRequest;
 import dev.sogong_girls.mr_world.domain.souvenir.dto.SouvenirResponse;
@@ -13,7 +14,6 @@ import dev.sogong_girls.mr_world.domain.souvenir.mapper.SouvenirMapper;
 import dev.sogong_girls.mr_world.domain.souvenir.repository.SouvenirRepository;
 import dev.sogong_girls.mr_world.global.exception.BusinessErrorCode;
 import dev.sogong_girls.mr_world.global.exception.BusinessException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service

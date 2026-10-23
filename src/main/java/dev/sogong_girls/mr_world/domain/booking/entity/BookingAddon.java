@@ -47,4 +47,13 @@ public class BookingAddon {
         this.nthDay = nthDay;
         this.meal = meal;
     }
+
+    public void updateInfo(AddonOption addonOption, Integer nthDay, Meal meal) {
+        if (addonOption != null)
+            this.addonOption = addonOption;
+        if (nthDay != null)
+            this.nthDay = nthDay;
+        if (meal != null)
+            this.meal = meal;
+    }
 }
