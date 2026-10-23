@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table(name = "user")
+@Table(name = "mr_world_user")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
     @Id
@@ -55,5 +55,19 @@ public class User {
         this.phoneNumber = phoneNumber;
         this.address = address;
         this.isRegular = false;
+    }
+
+    public void updateInfo(String name, String phoneNumber, String address) {
+        if (name != null)
+            this.name = name;
+        if (phoneNumber != null)
+            this.phoneNumber = phoneNumber;
+        if (address != null)
+            this.address = address;
+    }
+
+    public void updateIsRegular(Boolean isRegular) {
+        if (isRegular != null)
+            this.isRegular = isRegular;
     }
 }
