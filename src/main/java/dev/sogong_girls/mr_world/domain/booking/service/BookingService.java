@@ -23,6 +23,8 @@ import dev.sogong_girls.mr_world.domain.tour.entity.FoodOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.HotelOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.Tour;
 import dev.sogong_girls.mr_world.domain.tour.entity.TourStyle;
+import dev.sogong_girls.mr_world.domain.tour.enums.TourStyleType;
+import dev.sogong_girls.mr_world.domain.tour.enums.TourTheme;
 import dev.sogong_girls.mr_world.domain.tour.repository.AddonOptionRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.FoodOptionRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.HotelOptionRepository;
@@ -52,38 +54,32 @@ public class BookingService {
         // 1단계: Booking 객체 생성
         Tour tour = tourRepository.findById(request.tourId())
                 .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
-        TourStyle style = tourStyleRepository.findById(request.tourStyleId())
-                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
-        HotelOption hotel = hotelOptionRepository.findById(request.hotelOptionId())
-                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
-        FoodOption food = foodOptionRepository.findById(request.foodOptionId())
-                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
-
         List<BookingCreateRequest.BookingAddonRequest> addonRequests = request.bookingAddons() == null ? List.of()
                 : request.bookingAddons();
-        List<AddonOption> addonOptions = new ArrayList<>();
+        List<Long> addonOptionIds = new ArrayList<>();
         for (BookingCreateRequest.BookingAddonRequest addonRequest : addonRequests) {
             if (addonRequest == null || addonRequest.addonOptionId() == null) {
                 throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
             }
-            addonOptions.add(addonOptionRepository.findById(addonRequest.addonOptionId())
-                    .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND)));
+            addonOptionIds.add(addonRequest.addonOptionId());
         }
+        ValidatedOptions options = validateBooking(tour, request.tourStyleId(), request.hotelOptionId(),
+                request.foodOptionId(), addonOptionIds);
 
         // 금액 및 상태 결정
         PriceResponse price = tourService.calculatePrice(tour.getId(), new PriceCalculateRequest(
-                style.getId(), hotel.getId(), food.getId(), request.participantsCount(),
-                addonOptions.stream().map(AddonOption::getId).toList()));
+                options.style().getId(), options.hotel().getId(), options.food().getId(),
+                request.participantsCount(), addonOptionIds));
 
         TourStatus status = request.participantsCount() >= 3 ? TourStatus.CONFIRMED : TourStatus.PENDING;
 
         Booking booking = bookingRepository.save(Booking.builder()
                 .tour(tour)
                 .userId(userId)
-                .tourStyleId(style.getId())
-                .tourStyleType(style.getType())
-                .hotelOption(hotel)
-                .foodOption(food)
+                .tourStyleId(options.style().getId())
+                .tourStyleType(options.style().getType())
+                .hotelOption(options.hotel())
+                .foodOption(options.food())
                 .totalPrice(price.totalPrice())
                 .discountPrice(price.discountPrice())
                 .participantsCount(request.participantsCount())
@@ -100,7 +96,7 @@ public class BookingService {
             BookingCreateRequest.BookingAddonRequest addonRequest = addonRequests.get(i);
             bookingAddons.add(bookingAddonRepository.save(BookingAddon.builder()
                     .bookingId(booking.getId())
-                    .addonOption(addonOptions.get(i))
+                    .addonOption(options.addonOptions().get(i))
                     .nthDay(addonRequest.nthDay())
                     .meal(addonRequest.meal())
                     .build()));
@@ -119,16 +115,20 @@ public class BookingService {
                 .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
         if (!booking.getUserId().equals(userId))
             throw new BusinessException(BusinessErrorCode.UNAUTHORIZED);
+        checkPayable(booking);
 
         Long tourId = booking.getTour().getId();
-        Long styleId = request.tourStyleId();
-        Long hotelId = request.hotelOptionId();
-        Long foodId = request.foodOptionId();
-
-        TourStyle style = tourStyleRepository.findById(styleId).orElse(null);
-        HotelOption hotel = hotelOptionRepository.findById(hotelId).orElse(null);
-        FoodOption food = foodOptionRepository.findById(foodId).orElse(null);
-        booking.updateOptions(styleId, style == null ? null : style.getType(), hotel, food, null, null);
+        TourStyle style = request.tourStyleId() == null ? null
+                : tourStyleRepository.findById(request.tourStyleId())
+                        .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+        HotelOption hotel = request.hotelOptionId() == null ? null
+                : hotelOptionRepository.findById(request.hotelOptionId())
+                        .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+        FoodOption food = request.foodOptionId() == null ? null
+                : foodOptionRepository.findById(request.foodOptionId())
+                        .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+        booking.updateOptions(request.tourStyleId(), style == null ? null : style.getType(),
+                hotel, food, null, null);
 
         // 2단계: 요청된 BookingAddon 리스트 수정
         if (request.bookingAddons() != null) {
@@ -146,9 +146,6 @@ public class BookingService {
                 if (addonRequest.addonOptionId() != null) {
                     addonOption = addonOptionRepository.findById(addonRequest.addonOptionId())
                             .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
-                    if (!tourId.equals(addonOption.getTourId())) {
-                        throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
-                    }
                 }
                 bookingAddon.updateInfo(addonOption, addonRequest.nthDay(), addonRequest.meal());
             }
@@ -158,9 +155,14 @@ public class BookingService {
         List<BookingAddon> bookingAddons = bookingAddonRepository.findAllByBookingId(id);
         booking.updateBookingAddons(bookingAddons);
 
+        List<Long> addonOptionIds = bookingAddons.stream()
+                .map(addon -> addon.getAddonOption().getId()).toList();
+        validateBooking(booking.getTour(), booking.getTourStyleId(), booking.getHotelOption().getId(),
+                booking.getFoodOption().getId(), addonOptionIds);
+
         PriceResponse price = tourService.calculatePrice(tourId, new PriceCalculateRequest(
-                styleId, hotelId, foodId, booking.getParticipantsCount(),
-                bookingAddons.stream().map(addon -> addon.getAddonOption().getId()).toList()));
+                booking.getTourStyleId(), booking.getHotelOption().getId(), booking.getFoodOption().getId(),
+                booking.getParticipantsCount(), addonOptionIds));
         booking.updateOptions(null, null, null, null, price.totalPrice(), price.discountPrice());
 
         return bookingMapper.toDetailResponse(booking);
@@ -178,12 +180,53 @@ public class BookingService {
         return bookingMapper.toResponse(booking);
     }
 
-    private boolean validateBooking(Long id) {
-        throw new UnsupportedOperationException("validateBooking is not implemented yet");
+    private ValidatedOptions validateBooking(Tour tour, Long styleId, Long hotelId, Long foodId,
+            List<Long> addonOptionIds) {
+        // 선택된 투어 옵션이 존재하는지, 모두 같은 투어에 속해 있는지 검사
+        if (styleId == null || hotelId == null || foodId == null) {
+            throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
+        }
+        TourStyle style = tourStyleRepository.findById(styleId)
+                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+        HotelOption hotel = hotelOptionRepository.findById(hotelId)
+                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+        FoodOption food = foodOptionRepository.findById(foodId)
+                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+
+        Long tourId = tour.getId();
+        if (!tourId.equals(style.getTourId()) || !tourId.equals(hotel.getTourId())
+                || !tourId.equals(food.getTourId())) {
+            throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
+        }
+        if ((tour.getTourTheme() == TourTheme.HONEYMOON || tour.getTourTheme() == TourTheme.PARENT)
+                && style.getType() == TourStyleType.CLASSIC) {
+            throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
+        }
+
+        List<AddonOption> addonOptions = new ArrayList<>();
+        for (Long addonOptionId : addonOptionIds) {
+            if (addonOptionId == null) {
+                throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
+            }
+            AddonOption addon = addonOptionRepository.findById(addonOptionId)
+                    .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+            if (!tourId.equals(addon.getTourId())) {
+                throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
+            }
+            addonOptions.add(addon);
+        }
+        return new ValidatedOptions(style, hotel, food, addonOptions);
     }
 
-    private boolean checkPayable(Long id) {
-        throw new UnsupportedOperationException("checkPayable is not implemented yet");
+    private record ValidatedOptions(TourStyle style, HotelOption hotel, FoodOption food,
+            List<AddonOption> addonOptions) {
+    }
+
+    private void checkPayable(Booking booking) {
+        if (booking.getPaidAt() != null
+                || (booking.getStatus() != TourStatus.PENDING && booking.getStatus() != TourStatus.CONFIRMED)) {
+            throw new BusinessException(BusinessErrorCode.ALREADY_PAID);
+        }
     }
 
     private boolean processPayment(Long id) {

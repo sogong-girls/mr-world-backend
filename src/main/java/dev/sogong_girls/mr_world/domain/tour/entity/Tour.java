@@ -43,7 +43,7 @@ public class Tour {
     @Column(name = "transport_type", nullable = false)
     private TransportType transportType;
 
-    @Column(name = "souvenir_id", nullable = false)
+    @Column(name = "souvenir_id", nullable = true)
     private Long souvenirId;
 
     @Column(name = "n_nights")
