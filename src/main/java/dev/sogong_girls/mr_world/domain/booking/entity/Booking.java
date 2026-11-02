@@ -68,7 +68,7 @@ public class Booking {
     @Column(name = "discount_price")
     private Integer discountPrice;
 
-    @Column(name = "payment_due_at", nullable = false)
+    @Column(name = "payment_due_at")
     private LocalDateTime paymentDueAt;
 
     @Column(name = "paid_at")

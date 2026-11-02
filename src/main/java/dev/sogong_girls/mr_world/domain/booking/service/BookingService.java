@@ -46,6 +46,7 @@ public class BookingService {
     private final HotelOptionRepository hotelOptionRepository;
     private final FoodOptionRepository foodOptionRepository;
     private final TourService tourService;
+    private final SmsNotificationService smsNotificationService;
 
     private final BookingMapper bookingMapper;
 
@@ -104,6 +105,7 @@ public class BookingService {
 
         // 3단계: 생성된 addons를 Booking에 반영
         booking.updateBookingAddons(bookingAddons);
+        smsNotificationService.createNotifications(booking);
 
         return bookingMapper.toDetailResponse(booking);
     }

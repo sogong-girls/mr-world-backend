@@ -29,10 +29,9 @@ public class AdminSouvenirController {
         return ResponseEntity.ok(service.getSouvenirList());
     }
 
-    @PostMapping("/api/admin/tours/{id}/souvenirs")
-    public ResponseEntity<SouvenirResponse> createSouvenir(@PathVariable("id") Long id,
-            @Valid @RequestBody SouvenirCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.createSouvenir(id, request));
+    @PostMapping("/api/admin/souvenirs")
+    public ResponseEntity<SouvenirResponse> createSouvenir(@Valid @RequestBody SouvenirCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.createSouvenir(request));
     }
 
     @PatchMapping("/api/admin/souvenirs/{id}")

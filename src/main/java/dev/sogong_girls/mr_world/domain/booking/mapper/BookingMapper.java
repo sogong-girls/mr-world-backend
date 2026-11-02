@@ -8,9 +8,7 @@ import org.mapstruct.ReportingPolicy;
 
 import dev.sogong_girls.mr_world.domain.booking.dto.BookingDetailResponse;
 import dev.sogong_girls.mr_world.domain.booking.dto.BookingResponse;
-import dev.sogong_girls.mr_world.domain.booking.dto.SmsNotificationResponse;
 import dev.sogong_girls.mr_world.domain.booking.entity.Booking;
-import dev.sogong_girls.mr_world.domain.booking.entity.SmsNotification;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface BookingMapper {
@@ -22,7 +20,4 @@ public interface BookingMapper {
 
     BookingDetailResponse toDetailResponse(Booking booking);
 
-    SmsNotificationResponse toNotificationResponse(SmsNotification notification);
-
-    List<SmsNotificationResponse> toNotificationResponses(List<SmsNotification> notifications);
 }

@@ -24,18 +24,30 @@ public class AdminSouvenirService {
     private final SouvenirMapper souvenirMapper;
 
     public List<SouvenirResponse> getSouvenirList() {
-        return souvenirMapper.toResponses(souvenirRepository.findAll());
+        List<Souvenir> souvenirs = souvenirRepository.findAll();
+
+        // TODO: 대시보드에 들어갈 각 예약별 필요 수량 구하기
+        // (대시보드 형식을 알아야 함)
+
+        return souvenirMapper.toResponses(souvenirs);
     }
 
-    public SouvenirResponse createSouvenir(Long id, SouvenirCreateRequest request) {
-        throw new UnsupportedOperationException("createSouvenir is not implemented yet");
+    @Transactional
+    public SouvenirResponse createSouvenir(SouvenirCreateRequest request) {
+        Souvenir souvenir = souvenirRepository.save(Souvenir.builder()
+                .name(request.name())
+                .brand(request.brand())
+                .description(request.description())
+                .stockCount(request.stockCount())
+                .build());
+
+        return souvenirMapper.toResponse(souvenir);
     }
 
     @Transactional
     public SouvenirResponse updateSouvenir(Long id, SouvenirUpdateRequest request) {
-        Souvenir souvenir = souvenirRepository.findById(id).orElse(null);
-        if (souvenir == null)
-            throw new BusinessException(BusinessErrorCode.NOT_FOUND);
+        Souvenir souvenir = souvenirRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
 
         souvenir.updateInfo(request.name(), request.brand(), request.description());
         return souvenirMapper.toResponse(souvenir);
@@ -43,9 +55,8 @@ public class AdminSouvenirService {
 
     @Transactional
     public SouvenirResponse updateStock(Long id, StockUpdateRequest request) {
-        Souvenir souvenir = souvenirRepository.findById(id).orElse(null);
-        if (souvenir == null)
-            throw new BusinessException(BusinessErrorCode.NOT_FOUND);
+        Souvenir souvenir = souvenirRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
 
         souvenir.updateStockCount(request.amount());
         return souvenirMapper.toResponse(souvenir);

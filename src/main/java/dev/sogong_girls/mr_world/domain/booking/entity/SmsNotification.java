@@ -25,7 +25,7 @@ public class SmsNotification {
     @Column(name = "booking_id", nullable = false)
     private Long bookingId;
 
-    @Column(name = "send_due", nullable = false)
+    @Column(name = "send_due")
     private LocalDateTime sendDue;
 
     @Column(name = "sent_at")
