@@ -14,6 +14,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -33,9 +34,26 @@ public class BookingAddon {
     @JoinColumn(name = "addon_option_id", nullable = false)
     private AddonOption addonOption;
 
-    @Column(name = "n_day")
-    private Integer day;
+    @Column(name = "nth_day")
+    private Integer nthDay;
 
     @Enumerated(EnumType.STRING)
     private Meal meal;
+
+    @Builder
+    public BookingAddon(Long bookingId, AddonOption addonOption, Integer nthDay, Meal meal) {
+        this.bookingId = bookingId;
+        this.addonOption = addonOption;
+        this.nthDay = nthDay;
+        this.meal = meal;
+    }
+
+    public void updateInfo(AddonOption addonOption, Integer nthDay, Meal meal) {
+        if (addonOption != null)
+            this.addonOption = addonOption;
+        if (nthDay != null)
+            this.nthDay = nthDay;
+        if (meal != null)
+            this.meal = meal;
+    }
 }

@@ -1,7 +1,8 @@
-package dev.sogong_girls.mr_world.domain.tour.repository;
+package dev.sogong_girls.mr_world.domain.souvenir.repository;
 
-import dev.sogong_girls.mr_world.domain.tour.entity.Souvenir;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import dev.sogong_girls.mr_world.domain.souvenir.entity.Souvenir;
 
 public interface SouvenirRepository extends JpaRepository<Souvenir, Long> {
 }

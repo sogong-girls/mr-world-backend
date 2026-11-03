@@ -10,12 +10,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table(name = "user")
+@Table(name = "mr_world_user")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
     @Id
@@ -42,5 +43,31 @@ public class User {
     private String address;
 
     @Column(name = "is_regular")
-    private Boolean isRegular = false;
+    private Boolean isRegular;
+
+    @Builder
+    public User(String loginId, String password, Role role, String name,
+            String phoneNumber, String address) {
+        this.loginId = loginId;
+        this.password = password;
+        this.role = role;
+        this.name = name;
+        this.phoneNumber = phoneNumber;
+        this.address = address;
+        this.isRegular = false;
+    }
+
+    public void updateInfo(String name, String phoneNumber, String address) {
+        if (name != null)
+            this.name = name;
+        if (phoneNumber != null)
+            this.phoneNumber = phoneNumber;
+        if (address != null)
+            this.address = address;
+    }
+
+    public void updateIsRegular(Boolean isRegular) {
+        if (isRegular != null)
+            this.isRegular = isRegular;
+    }
 }

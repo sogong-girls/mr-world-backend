@@ -22,16 +22,19 @@ public class UserController {
 
     @GetMapping("/api/users/me")
     public ResponseEntity<UserResponse> getUser() {
-        return ResponseEntity.ok(service.getUser());
+        // TODO: JWT 인증 연동 후 토큰에서 사용자 ID 구하기 (임시로 userId 0L 사용)
+        return ResponseEntity.ok(service.getUser(0L));
     }
 
     @PatchMapping("/api/users/me")
     public ResponseEntity<UserResponse> updateUser(@Valid @RequestBody UserUpdateRequest request) {
-        return ResponseEntity.ok(service.updateUser(request));
+        // TODO: JWT 인증 연동 후 토큰에서 사용자 ID 구하기 (임시로 userId 0L 사용)
+        return ResponseEntity.ok(service.updateUser(0L, request));
     }
 
     @GetMapping("/api/users/me/bookings")
     public ResponseEntity<List<BookingResponse>> getBookingList() {
-        return ResponseEntity.ok(service.getBookingList());
+        // TODO: JWT 인증 연동 후 토큰에서 사용자 ID 구하기 (임시로 userId 0L 사용)
+        return ResponseEntity.ok(service.getBookingList(0L));
     }
 }

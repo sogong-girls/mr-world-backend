@@ -2,7 +2,7 @@ package dev.sogong_girls.mr_world.domain.booking.dto;
 
 import dev.sogong_girls.mr_world.domain.booking.enums.TourStatus;
 import dev.sogong_girls.mr_world.domain.tour.enums.TourStyleType;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 
 public record BookingResponse(
     Long id,
@@ -11,7 +11,7 @@ public record BookingResponse(
     TourStyleType tourStyleType,
     Integer totalPrice,
     Integer participantsCount,
-    OffsetDateTime startAt,
-    OffsetDateTime endAt,
+    LocalDateTime startAt,
+    LocalDateTime endAt,
     TourStatus status
 ) {}

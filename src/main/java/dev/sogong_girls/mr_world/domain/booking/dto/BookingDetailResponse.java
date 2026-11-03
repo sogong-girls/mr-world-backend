@@ -1,29 +1,33 @@
 package dev.sogong_girls.mr_world.domain.booking.dto;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.List;
 
+import dev.sogong_girls.mr_world.domain.booking.entity.BookingAddon;
 import dev.sogong_girls.mr_world.domain.booking.enums.TourStatus;
+import dev.sogong_girls.mr_world.domain.tour.entity.FoodOption;
+import dev.sogong_girls.mr_world.domain.tour.entity.HotelOption;
+import dev.sogong_girls.mr_world.domain.tour.entity.Tour;
 import dev.sogong_girls.mr_world.domain.tour.enums.TourStyleType;
 
 public record BookingDetailResponse(
         Long id,
-        Long tourId,
+        Tour tour,
         Long userId,
         Long tourStyleId,
         TourStyleType tourStyleType,
-        Long hotelOptionId,
-        Long foodOptionId,
-        List<BookingAddonResponse> addons,
+        HotelOption hotelOption,
+        FoodOption foodOption,
+        List<BookingAddon> bookingAddons,
         Integer totalPrice,
         Integer discountPrice,
-        OffsetDateTime paymentDueAt,
-        OffsetDateTime paidAt,
+        LocalDateTime paymentDueAt,
+        LocalDateTime paidAt,
         Integer participantsCount,
-        OffsetDateTime startAt,
-        OffsetDateTime endAt,
-        Integer nNights,
-        Integer nDays,
+        LocalDateTime startAt,
+        LocalDateTime endAt,
+        Integer nights,
+        Integer days,
         TourStatus status,
-        OffsetDateTime createdAt) {
+        LocalDateTime createdAt) {
 }

@@ -24,6 +24,7 @@ dependencies {
 
 	implementation("jakarta.persistence:jakarta.persistence-api:3.2.0")
 	implementation("jakarta.validation:jakarta.validation-api:3.1.0")
+	implementation("org.mapstruct:mapstruct:1.6.3")
 
 	// implementation("org.springframework.boot:spring-boot-starter-security")
 
@@ -32,6 +33,8 @@ dependencies {
 	runtimeOnly("org.postgresql:postgresql")
 
 	annotationProcessor("org.projectlombok:lombok")
+	annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
+	annotationProcessor("org.projectlombok:lombok-mapstruct-binding:0.2.0")
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")

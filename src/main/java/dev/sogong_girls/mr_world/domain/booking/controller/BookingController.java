@@ -23,17 +23,20 @@ public class BookingController {
 
     @PostMapping("/api/bookings")
     public ResponseEntity<BookingDetailResponse> createBooking(@Valid @RequestBody BookingCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.createBooking(request));
+        // TODO: JWT 인증 연동 후 토큰에서 사용자 ID 구하기 (임시로 userId 0L 사용)
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.createBooking(0L, request));
     }
 
     @PatchMapping("/api/bookings/{id}/options")
     public ResponseEntity<BookingDetailResponse> updateBookingOptions(@PathVariable("id") Long id,
             @Valid @RequestBody BookingOptionUpdateRequest request) {
-        return ResponseEntity.ok(service.updateBookingOptions(id, request));
+        // TODO: JWT 인증 연동 후 토큰에서 사용자 ID 구하기 (임시로 userId 0L 사용)
+        return ResponseEntity.ok(service.updateBookingOptions(id, 0L, request));
     }
 
     @PostMapping("/api/bookings/{id}/payments")
     public ResponseEntity<BookingResponse> payBooking(@PathVariable("id") Long id) {
-        return ResponseEntity.ok(service.payBooking(id));
+        // TODO: JWT 인증 연동 후 토큰에서 사용자 ID 구하기 (임시로 userId 0L 사용)
+        return ResponseEntity.ok(service.payBooking(id, 0L));
     }
 }
