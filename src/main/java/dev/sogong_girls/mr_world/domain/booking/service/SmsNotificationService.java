@@ -1,5 +1,6 @@
 package dev.sogong_girls.mr_world.domain.booking.service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,9 +22,21 @@ public class SmsNotificationService {
     private final SmsNotificationRepository smsNotificationRepository;
     private final SmsNotificationMapper smsNotificationMapper;
 
-    @Scheduled(cron = "0 0 * * * * *")
-    private void checkNotificationsSendDue() {
-        throw new UnsupportedOperationException("checkNotificationsSendDue is not implemented yet");
+    @Scheduled(cron = "0 0 * * * *")
+    @Transactional
+    public void checkNotificationsSendDue() {
+        List<SmsNotification> unpaidBookingNotifications = smsNotificationRepository
+                .findUnsentForUnpaidBookings(TourStatus.CONFIRMED);
+        for (SmsNotification notification : unpaidBookingNotifications) {
+            sendNotice();
+            notification.updateSentAt();
+        }
+        List<SmsNotification> notifications = smsNotificationRepository
+                .findAllBySentAtIsNullAndSendDueLessThanEqual(LocalDateTime.now());
+        for (SmsNotification notification : notifications) {
+            sendNotice();
+            notification.updateSentAt();
+        }
     }
 
     @Transactional
@@ -32,7 +45,7 @@ public class SmsNotificationService {
         if (booking.getStatus() == TourStatus.PENDING) {
             notifications.add(SmsNotification.builder()
                     .bookingId(booking.getId())
-                    .message("예약이 확정되면 결제를 진행해 주세요.")
+                    .message("예약이 확정되었습니다. 결제를 진행해 주세요.")
                     .build());
         }
 
@@ -45,11 +58,7 @@ public class SmsNotificationService {
         return smsNotificationMapper.toResponses(smsNotificationRepository.saveAll(notifications));
     }
 
-    public SmsNotificationResponse sendPaymentNotice() {
-        throw new UnsupportedOperationException("sendPaymentNotice is not implemented yet");
-    }
-
-    public SmsNotificationResponse sendDepartureNotice() {
-        throw new UnsupportedOperationException("sendDepartureNotice is not implemented yet");
+    public void sendNotice() {
+        throw new UnsupportedOperationException("sendNotice is not implemented yet");
     }
 }
