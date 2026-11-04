@@ -47,8 +47,8 @@ public class UserService {
             // 유저 전화번호가 바뀌면 진행 중인 예약의 Notification도 전송할 전화번호 변경
             List<SmsNotification> unsentNotifications = smsNotificationRepository
                     .findUnsentByPhoneNumber(prevPhoneNumber);
-            for (SmsNotification s : unsentNotifications) {
-                s.updatePhoneNumber(user.getPhoneNumber());
+            for (SmsNotification notification : unsentNotifications) {
+                notification.updatePhoneNumber(user.getPhoneNumber());
             }
         }
 
