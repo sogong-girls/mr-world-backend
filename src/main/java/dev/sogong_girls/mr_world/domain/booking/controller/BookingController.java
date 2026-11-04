@@ -2,6 +2,8 @@ package dev.sogong_girls.mr_world.domain.booking.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import dev.sogong_girls.mr_world.global.security.JwtTokenProvider.JwtPrincipal;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,21 +24,21 @@ public class BookingController {
     private final BookingService service;
 
     @PostMapping("/api/bookings")
-    public ResponseEntity<BookingDetailResponse> createBooking(@Valid @RequestBody BookingCreateRequest request) {
-        // TODO: JWT 인증 연동 후 토큰에서 사용자 ID 구하기 (임시로 userId 0L 사용)
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.createBooking(0L, request));
+    public ResponseEntity<BookingDetailResponse> createBooking(@AuthenticationPrincipal JwtPrincipal principal,
+            @Valid @RequestBody BookingCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.createBooking(principal.userId(), request));
     }
 
     @PatchMapping("/api/bookings/{id}/options")
     public ResponseEntity<BookingDetailResponse> updateBookingOptions(@PathVariable("id") Long id,
+            @AuthenticationPrincipal JwtPrincipal principal,
             @Valid @RequestBody BookingOptionUpdateRequest request) {
-        // TODO: JWT 인증 연동 후 토큰에서 사용자 ID 구하기 (임시로 userId 0L 사용)
-        return ResponseEntity.ok(service.updateBookingOptions(id, 0L, request));
+        return ResponseEntity.ok(service.updateBookingOptions(id, principal.userId(), request));
     }
 
     @PostMapping("/api/bookings/{id}/payments")
-    public ResponseEntity<BookingResponse> payBooking(@PathVariable("id") Long id) {
-        // TODO: JWT 인증 연동 후 토큰에서 사용자 ID 구하기 (임시로 userId 0L 사용)
-        return ResponseEntity.ok(service.payBooking(id, 0L));
+    public ResponseEntity<BookingResponse> payBooking(@PathVariable("id") Long id,
+            @AuthenticationPrincipal JwtPrincipal principal) {
+        return ResponseEntity.ok(service.payBooking(id, principal.userId()));
     }
 }

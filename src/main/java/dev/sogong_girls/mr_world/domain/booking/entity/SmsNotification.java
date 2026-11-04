@@ -25,6 +25,9 @@ public class SmsNotification {
     @Column(name = "booking_id", nullable = false)
     private Long bookingId;
 
+    @Column(name = "phone_number", nullable = false)
+    private String phoneNumber;
+
     @Column(name = "send_due")
     private LocalDateTime sendDue;
 
@@ -34,10 +37,21 @@ public class SmsNotification {
     private String message;
 
     @Builder
-    public SmsNotification(Long bookingId, LocalDateTime sendDue, LocalDateTime sentAt, String message) {
+    public SmsNotification(Long bookingId, String phoneNumber, LocalDateTime sendDue, String message) {
         this.bookingId = bookingId;
+        this.phoneNumber = phoneNumber;
         this.sendDue = sendDue;
-        this.sentAt = sentAt;
+        this.sentAt = null;
         this.message = message;
+    }
+
+    public void updatePhoneNumber(String phoneNumber) {
+        if (phoneNumber != null) {
+            this.phoneNumber = phoneNumber;
+        }
+    }
+
+    public void updateSentAt() {
+        this.sentAt = LocalDateTime.now();
     }
 }

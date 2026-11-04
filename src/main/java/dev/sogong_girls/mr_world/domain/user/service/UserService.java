@@ -6,8 +6,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import dev.sogong_girls.mr_world.domain.booking.dto.BookingResponse;
+import dev.sogong_girls.mr_world.domain.booking.entity.SmsNotification;
 import dev.sogong_girls.mr_world.domain.booking.mapper.BookingMapper;
 import dev.sogong_girls.mr_world.domain.booking.repository.BookingRepository;
+import dev.sogong_girls.mr_world.domain.booking.repository.SmsNotificationRepository;
 import dev.sogong_girls.mr_world.domain.user.dto.UserResponse;
 import dev.sogong_girls.mr_world.domain.user.dto.UserUpdateRequest;
 import dev.sogong_girls.mr_world.domain.user.entity.User;
@@ -22,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class UserService {
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
+    private final SmsNotificationRepository smsNotificationRepository;
 
     private final UserMapper userMapper;
     private final BookingMapper bookingMapper;
@@ -36,10 +39,18 @@ public class UserService {
     public UserResponse updateUser(Long id, UserUpdateRequest request) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+        String prevPhoneNumber = user.getPhoneNumber();
 
         user.updateInfo(request.name(), request.phoneNumber(), request.address());
 
-        // TODO: 유저 전화번호가 바뀌면 진행 중인 예약의 Notification도 전송할 전화번호 변경
+        if (!user.getPhoneNumber().equals(prevPhoneNumber)) {
+            // 유저 전화번호가 바뀌면 진행 중인 예약의 Notification도 전송할 전화번호 변경
+            List<SmsNotification> unsentNotifications = smsNotificationRepository
+                    .findUnsentByPhoneNumber(prevPhoneNumber);
+            for (SmsNotification notification : unsentNotifications) {
+                notification.updatePhoneNumber(user.getPhoneNumber());
+            }
+        }
 
         return userMapper.toResponse(user);
     }

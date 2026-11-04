@@ -29,6 +29,9 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Column(name = "refresh_token_hash", length = 64)
+    private String refreshTokenHash;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
@@ -36,7 +39,7 @@ public class User {
     @Column(nullable = false)
     private String name;
 
-    @Column(name = "phone_number", nullable = false)
+    @Column(name = "phone_number", nullable = false, unique = true)
     private String phoneNumber;
 
     @Column(nullable = false)
@@ -69,5 +72,9 @@ public class User {
     public void updateIsRegular(Boolean isRegular) {
         if (isRegular != null)
             this.isRegular = isRegular;
+    }
+
+    public void updateRefreshTokenHash(String refreshTokenHash) {
+        this.refreshTokenHash = refreshTokenHash;
     }
 }
