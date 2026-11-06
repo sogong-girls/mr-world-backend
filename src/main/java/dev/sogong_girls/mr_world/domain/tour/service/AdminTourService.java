@@ -120,7 +120,8 @@ public class AdminTourService {
                 .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
         tour.updateInfo(request.name(), request.departure(), request.destination(),
                 request.tourTheme(), request.transportType(), request.souvenirId(),
-                null, null, null, null, null, request.description());
+                request.nights(), request.days(), request.departureTime(), request.arrivalTime(),
+                request.course(), request.description());
 
         // 2단계: TourStyle 객체 및 포함된 HotelOption/FoodOption 수정
         if (request.tourStyles() != null) {

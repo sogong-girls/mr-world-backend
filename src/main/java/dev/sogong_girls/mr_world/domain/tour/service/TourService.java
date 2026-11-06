@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import dev.sogong_girls.mr_world.domain.tour.dto.PriceCalculateRequest;
+import dev.sogong_girls.mr_world.domain.tour.dto.PriceCalculateRequest.AddonRequest;
 import dev.sogong_girls.mr_world.domain.tour.dto.PriceResponse;
 import dev.sogong_girls.mr_world.domain.tour.dto.TourDetailResponse;
 import dev.sogong_girls.mr_world.domain.tour.dto.TourResponse;
@@ -67,18 +68,18 @@ public class TourService {
                 .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
 
         if (!id.equals(style.getTourId()) || !id.equals(hotel.getTourId()) || !id.equals(food.getTourId())) {
-            throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
+            throw new BusinessException(BusinessErrorCode.INVALID_INPUT, "해당 투어에 존재하지 않는 옵션입니다.");
         }
 
         int pricePerParticipant = Math.addExact(style.getBasePrice(), hotel.getPrice());
         pricePerParticipant = Math.addExact(pricePerParticipant, food.getPrice());
 
-        if (request.bookingAddonIds() != null) {
-            for (Long addonId : request.bookingAddonIds()) {
-                if (addonId == null) {
-                    throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
+        if (request.addonOptions() != null) {
+            for (AddonRequest addonReq : request.addonOptions()) {
+                if (addonReq.addonOptionId() == null) {
+                    throw new BusinessException(BusinessErrorCode.INVALID_INPUT, "해당 투어에 존재하지 않는 추가 옵션입니다.");
                 }
-                AddonOption addon = addonOptionRepository.findById(addonId)
+                AddonOption addon = addonOptionRepository.findById(addonReq.addonOptionId())
                         .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
                 if (!id.equals(addon.getTourId())) {
                     throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
@@ -88,6 +89,23 @@ public class TourService {
         }
 
         int totalPrice = Math.multiplyExact(pricePerParticipant, request.participantsCount());
+        return new PriceResponse(totalPrice, 0, totalPrice);
+    }
+
+    public PriceResponse calculatePriceByIds(Tour tour, TourStyle tourStyle, HotelOption hotelOption,
+            FoodOption foodOption,
+            List<AddonOption> addonOptions, Integer participantsCount) {
+
+        int pricePerParticipant = Math.addExact(tourStyle.getBasePrice(), hotelOption.getPrice());
+        pricePerParticipant = Math.addExact(pricePerParticipant, foodOption.getPrice());
+
+        if (addonOptions != null) {
+            for (AddonOption addon : addonOptions) {
+                pricePerParticipant = Math.addExact(pricePerParticipant, addon.getPrice());
+            }
+        }
+
+        int totalPrice = Math.multiplyExact(pricePerParticipant, participantsCount);
         return new PriceResponse(totalPrice, 0, totalPrice);
     }
 }

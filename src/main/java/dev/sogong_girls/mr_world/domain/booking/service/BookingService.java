@@ -1,5 +1,7 @@
 package dev.sogong_girls.mr_world.domain.booking.service;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,7 +18,6 @@ import dev.sogong_girls.mr_world.domain.booking.enums.TourStatus;
 import dev.sogong_girls.mr_world.domain.booking.mapper.BookingMapper;
 import dev.sogong_girls.mr_world.domain.booking.repository.BookingAddonRepository;
 import dev.sogong_girls.mr_world.domain.booking.repository.BookingRepository;
-import dev.sogong_girls.mr_world.domain.tour.dto.PriceCalculateRequest;
 import dev.sogong_girls.mr_world.domain.tour.dto.PriceResponse;
 import dev.sogong_girls.mr_world.domain.tour.entity.AddonOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.FoodOption;
@@ -55,6 +56,9 @@ public class BookingService {
         // 1단계: Booking 객체 생성
         Tour tour = tourRepository.findById(request.tourId())
                 .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+
+        validateBookingDate(tour, request.startAt(), request.endAt()); // 일수, 박수 및 시간이 실제 투어와 일치하는지 확인
+
         List<BookingCreateRequest.BookingAddonRequest> addonRequests = request.bookingAddons() == null ? List.of()
                 : request.bookingAddons();
         List<Long> addonOptionIds = new ArrayList<>();
@@ -64,13 +68,13 @@ public class BookingService {
             }
             addonOptionIds.add(addonRequest.addonOptionId());
         }
-        ValidatedOptions options = validateBooking(tour, request.tourStyleId(), request.hotelOptionId(),
+        ValidatedOptions options = validateOptions(tour, request.tourStyleId(), request.hotelOptionId(),
                 request.foodOptionId(), addonOptionIds);
 
         // 금액 및 상태 결정
-        PriceResponse price = tourService.calculatePrice(tour.getId(), new PriceCalculateRequest(
-                options.style().getId(), options.hotel().getId(), options.food().getId(),
-                request.participantsCount(), addonOptionIds));
+        PriceResponse price = tourService.calculatePriceByIds(tour,
+                options.style(), options.hotel(), options.food(),
+                options.addonOptions(), request.participantsCount());
 
         TourStatus status = request.participantsCount() >= 3 ? TourStatus.CONFIRMED : TourStatus.PENDING;
 
@@ -159,12 +163,14 @@ public class BookingService {
 
         List<Long> addonOptionIds = bookingAddons.stream()
                 .map(addon -> addon.getAddonOption().getId()).toList();
-        validateBooking(booking.getTour(), booking.getTourStyleId(), booking.getHotelOption().getId(),
+        ValidatedOptions options = validateOptions(booking.getTour(), booking.getTourStyleId(),
+                booking.getHotelOption().getId(),
                 booking.getFoodOption().getId(), addonOptionIds);
 
-        PriceResponse price = tourService.calculatePrice(tourId, new PriceCalculateRequest(
-                booking.getTourStyleId(), booking.getHotelOption().getId(), booking.getFoodOption().getId(),
-                booking.getParticipantsCount(), addonOptionIds));
+        PriceResponse price = tourService.calculatePriceByIds(booking.getTour(),
+                options.style(), options.hotel(), options.food(),
+                options.addonOptions(), booking.getParticipantsCount());
+
         booking.updateOptions(null, null, null, null, price.totalPrice(), price.discountPrice());
 
         return bookingMapper.toDetailResponse(booking);
@@ -182,11 +188,28 @@ public class BookingService {
         return bookingMapper.toResponse(booking);
     }
 
-    private ValidatedOptions validateBooking(Tour tour, Long styleId, Long hotelId, Long foodId,
+    private void validateBookingDate(Tour tour, LocalDateTime startAt, LocalDateTime endAt) {
+        if (startAt == null || endAt == null || !endAt.isAfter(startAt)) {
+            throw new BusinessException(BusinessErrorCode.INVALID_INPUT, "투어 일정 입력이 잘못되었습니다.");
+        }
+        if (!startAt.toLocalTime().equals(tour.getDepartureTime())
+                || !endAt.toLocalTime().equals(tour.getArrivalTime())) {
+            throw new BusinessException(BusinessErrorCode.INVALID_INPUT, "출발 및 도착 시각이 일치하지 않습니다.");
+        }
+
+        long nights = ChronoUnit.DAYS.between(startAt.toLocalDate(), endAt.toLocalDate());
+        long days = nights + 1;
+        if (tour.getNights() == null || tour.getDays() == null
+                || tour.getNights() != nights || tour.getDays() != days) {
+            throw new BusinessException(BusinessErrorCode.INVALID_INPUT, "투어 일수가 일치하지 않습니다.");
+        }
+    }
+
+    private ValidatedOptions validateOptions(Tour tour, Long styleId, Long hotelId, Long foodId,
             List<Long> addonOptionIds) {
         // 선택된 투어 옵션이 존재하는지, 모두 같은 투어에 속해 있는지 검사
         if (styleId == null || hotelId == null || foodId == null) {
-            throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
+            throw new BusinessException(BusinessErrorCode.INVALID_INPUT, "잘못된 옵션 ID입니다.");
         }
         TourStyle style = tourStyleRepository.findById(styleId)
                 .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
@@ -198,22 +221,22 @@ public class BookingService {
         Long tourId = tour.getId();
         if (!tourId.equals(style.getTourId()) || !tourId.equals(hotel.getTourId())
                 || !tourId.equals(food.getTourId())) {
-            throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
+            throw new BusinessException(BusinessErrorCode.INVALID_INPUT, "해당 투어에 존재하지 않는 옵션입니다.");
         }
         if ((tour.getTourTheme() == TourTheme.HONEYMOON || tour.getTourTheme() == TourTheme.PARENT)
                 && style.getType() == TourStyleType.CLASSIC) {
-            throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
+            throw new BusinessException(BusinessErrorCode.INVALID_INPUT, "허니문, 효도 여행은 Classic 스타일을 선택할 수 없습니다.");
         }
 
         List<AddonOption> addonOptions = new ArrayList<>();
         for (Long addonOptionId : addonOptionIds) {
             if (addonOptionId == null) {
-                throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
+                throw new BusinessException(BusinessErrorCode.INVALID_INPUT, "잘못된 옵션 ID입니다.");
             }
             AddonOption addon = addonOptionRepository.findById(addonOptionId)
                     .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
             if (!tourId.equals(addon.getTourId())) {
-                throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
+                throw new BusinessException(BusinessErrorCode.INVALID_INPUT, "해당 투어에 존재하지 않는 추가 옵션입니다.");
             }
             addonOptions.add(addon);
         }
@@ -231,7 +254,8 @@ public class BookingService {
         }
     }
 
-    private boolean processPayment(Long id) {
-        throw new UnsupportedOperationException("processPayment is not implemented yet");
-    }
+    // private boolean processPayment(Long id) {
+    // throw new UnsupportedOperationException("processPayment is not implemented
+    // yet");
+    // }
 }

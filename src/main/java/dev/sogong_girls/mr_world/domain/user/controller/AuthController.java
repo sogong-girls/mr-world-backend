@@ -8,7 +8,6 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,18 +21,12 @@ import dev.sogong_girls.mr_world.global.exception.BusinessException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.web.csrf.CsrfToken;
 
 @RestController
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService service;
     private final JwtProperties properties;
-
-    @GetMapping("/api/auth/csrf")
-    public CsrfToken csrf(CsrfToken csrfToken) {
-        return csrfToken;
-    }
 
     @PostMapping("/api/auth/signup")
     public ResponseEntity<UserResponse> signup(@Valid @RequestBody SignupRequest request) {

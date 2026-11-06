@@ -1,5 +1,6 @@
 package dev.sogong_girls.mr_world.domain.tour.dto;
 
+import java.time.LocalTime;
 import java.util.List;
 
 import dev.sogong_girls.mr_world.domain.tour.enums.AddonType;
@@ -17,6 +18,11 @@ public record TourUpdateRequest(
         TourTheme tourTheme,
         TransportType transportType,
         Long souvenirId,
+        Integer nights,
+        Integer days,
+        LocalTime departureTime,
+        LocalTime arrivalTime,
+        String course,
         String description,
         @Valid List<TourStyleRequest> tourStyles,
         @Valid List<AddonOptionRequest> addonOptions) {

@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum BusinessErrorCode {
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "잘못된 요청입니다."), // 여기서 ID, 비밀번호, 전화번호 등 형식 오류로 세분화 예정
-    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "ID 또는 비밀번호가 잘못되었습니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
     NOT_FOUND(HttpStatus.NOT_FOUND, "대상을 찾을 수 없습니다."),
     DUPLICATE_ID(HttpStatus.CONFLICT, "이미 존재하는 ID입니다."),

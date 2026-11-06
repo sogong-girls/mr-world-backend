@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,7 +21,11 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table(name = "booking_addon")
+@Table(name = "booking_addon", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_booking_addon_booking_option_day_meal", columnNames = {
+                "booking_id", "addon_option_id", "nth_day", "meal"
+        })
+})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class BookingAddon {
     @Id
@@ -34,10 +39,11 @@ public class BookingAddon {
     @JoinColumn(name = "addon_option_id", nullable = false)
     private AddonOption addonOption;
 
-    @Column(name = "nth_day")
+    @Column(name = "nth_day", nullable = false)
     private Integer nthDay;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Meal meal;
 
     @Builder
