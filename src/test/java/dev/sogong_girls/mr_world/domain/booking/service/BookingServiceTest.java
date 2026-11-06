@@ -26,6 +26,7 @@ import dev.sogong_girls.mr_world.domain.booking.entity.Booking;
 import dev.sogong_girls.mr_world.domain.booking.mapper.BookingMapper;
 import dev.sogong_girls.mr_world.domain.booking.repository.BookingAddonRepository;
 import dev.sogong_girls.mr_world.domain.booking.repository.BookingRepository;
+import dev.sogong_girls.mr_world.domain.tour.dto.PriceResponse;
 import dev.sogong_girls.mr_world.domain.tour.entity.FoodOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.HotelOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.Tour;
@@ -83,8 +84,8 @@ class BookingServiceTest {
         given(tourStyleRepository.findById(2L)).willReturn(Optional.of(style));
         given(hotelOptionRepository.findById(3L)).willReturn(Optional.of(hotel));
         given(foodOptionRepository.findById(4L)).willReturn(Optional.of(food));
-        // given(tourService.calculatePriceByIds(1L, 2L, 3L, 4L, List.of(), 2))
-        // .willReturn(new PriceResponse(200000, 0, 200000));
+        given(tourService.calculatePriceByIds(tour, style, hotel, food, List.of(), 2))
+                .willReturn(new PriceResponse(200000, 0, 200000));
         given(bookingRepository.save(any(Booking.class))).willAnswer(invocation -> invocation.getArgument(0));
 
         bookingService.createBooking(10L, request(startAt, endAt));
