@@ -54,22 +54,14 @@ class JwtAuthenticationIntegrationTest {
     @Autowired TransactionTemplate transactionTemplate;
     @MockitoBean AdminBookingService adminBookingService;
 
-    private Cookie csrfCookie;
-    private String csrfHeaderName;
-    private String csrfToken;
-
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         userRepository.deleteAll();
         given(adminBookingService.getAllBookingList()).willReturn(List.of());
-        MvcResult result = mvc.perform(get("/api/auth/csrf")).andExpect(status().isOk()).andReturn();
-        csrfCookie = cookie(result, "XSRF-TOKEN");
-        csrfHeaderName = JsonPath.read(result.getResponse().getContentAsString(), "$.headerName");
-        csrfToken = JsonPath.read(result.getResponse().getContentAsString(), "$.token");
     }
 
     @Test
-    void signupStoresBcryptAndLoginAuthenticatesWithHttpOnlyCookies() throws Exception {
+    void signupAndLoginWithoutCsrfStoreBcryptAndAuthenticateWithHttpOnlyCookies() throws Exception {
         signup();
         User user = transactionTemplate.execute(status -> userRepository.findByLoginId("tester").orElseThrow());
         assertThat(user.getPassword()).startsWith("$2").isNotEqualTo("password123!");
@@ -91,13 +83,13 @@ class JwtAuthenticationIntegrationTest {
     void rejectsBadCredentialsDuplicateIdsAndInvalidInput() throws Exception {
         signup();
         signupRequest().andExpect(status().isConflict());
-        mvc.perform(post("/api/auth/login").with(browserCsrf()).contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"loginId\":\"tester\",\"password\":\"wrong\"}"))
                 .andExpect(status().isUnauthorized());
-        mvc.perform(post("/api/auth/login").with(browserCsrf()).contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"loginId\":\"unknown\",\"password\":\"wrong\"}"))
                 .andExpect(status().isUnauthorized());
-        mvc.perform(post("/api/auth/login").with(browserCsrf()).contentType(MediaType.APPLICATION_JSON).content("{}"))
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -156,15 +148,14 @@ class JwtAuthenticationIntegrationTest {
     }
 
     @Test
-    void csrfEndpointEnablesBrowserLoginAndMissingCsrfIsRejected() throws Exception {
+    void refreshAndLogoutStillRequireCsrf() throws Exception {
         signup();
-        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(LOGIN))
+        Cookie refresh = cookie(login(), "refresh_token");
+        mvc.perform(post("/api/auth/refresh").cookie(refresh))
                 .andExpect(status().isForbidden());
-        MvcResult csrfResult = mvc.perform(get("/api/auth/csrf")).andExpect(status().isOk()).andReturn();
-        String token = JsonPath.read(csrfResult.getResponse().getContentAsString(), "$.token");
-        String headerName = JsonPath.read(csrfResult.getResponse().getContentAsString(), "$.headerName");
-        mvc.perform(post("/api/auth/login").cookie(cookie(csrfResult, "XSRF-TOKEN"))
-                .header(headerName, token).contentType(MediaType.APPLICATION_JSON).content(LOGIN))
+        mvc.perform(post("/api/auth/logout").cookie(refresh))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/auth/refresh").with(browserCsrf()).cookie(refresh))
                 .andExpect(status().isNoContent());
     }
 
@@ -184,14 +175,14 @@ class JwtAuthenticationIntegrationTest {
     }
 
     private org.springframework.test.web.servlet.ResultActions signupRequest() throws Exception {
-        return mvc.perform(post("/api/auth/signup").with(browserCsrf()).contentType(MediaType.APPLICATION_JSON).content("""
+        return mvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON).content("""
                 {"loginId":"tester","password":"password123!","name":"Tester",
                  "phoneNumber":"01012345678","address":"Seoul"}
                 """));
     }
 
     private MvcResult login() throws Exception {
-        return mvc.perform(post("/api/auth/login").with(browserCsrf()).contentType(MediaType.APPLICATION_JSON).content(LOGIN))
+        return mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(LOGIN))
                 .andExpect(status().isNoContent()).andReturn();
     }
 
@@ -201,7 +192,11 @@ class JwtAuthenticationIntegrationTest {
         return cookie;
     }
 
-    private RequestPostProcessor browserCsrf() {
+    private RequestPostProcessor browserCsrf() throws Exception {
+        MvcResult result = mvc.perform(get("/api/auth/csrf")).andExpect(status().isOk()).andReturn();
+        Cookie csrfCookie = cookie(result, "XSRF-TOKEN");
+        String csrfHeaderName = JsonPath.read(result.getResponse().getContentAsString(), "$.headerName");
+        String csrfToken = JsonPath.read(result.getResponse().getContentAsString(), "$.token");
         return request -> {
             var cookies = new ArrayList<Cookie>();
             if (request.getCookies() != null) {

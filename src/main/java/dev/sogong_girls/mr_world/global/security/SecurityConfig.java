@@ -40,7 +40,8 @@ public class SecurityConfig {
 
         return http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
-                .csrf(csrf -> csrf.csrfTokenRepository(csrfRepository))
+                .csrf(csrf -> csrf.csrfTokenRepository(csrfRepository)
+                        .ignoringRequestMatchers("/api/auth/signup", "/api/auth/login"))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .requestCache(requestCache -> requestCache.disable())
                 .formLogin(formLogin -> formLogin.disable())
