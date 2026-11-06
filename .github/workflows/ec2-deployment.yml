@@ -1,37 +1,29 @@
-
 name: Deploy Spring Boot to EC2
 
 on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+    push:
+        branches: [main]
+    workflow_dispatch:
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+    deploy:
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            set -e
+        steps:
+            - name: Deploy to EC2
+              uses: appleboy/ssh-action@v1
+              with:
+                  host: ${{ secrets.EC2_HOST }}
+                  username: ${{ secrets.EC2_USER }}
+                  key: ${{ secrets.EC2_SSH_KEY }}
+                  script: |
+                      set -e
 
-            cd /opt/mr-world-backend
+                      cd /opt/mr-world-backend
 
-            git pull --ff-only origin main
+                      git pull --ff-only origin main
 
-            chmod +x gradlew
-            ./gradlew clean bootJar --no-daemon --max-workers=1
+                      chmod +x gradlew
+                      ./gradlew clean bootJar --no-daemon --max-workers=1
 
-            PID=$(pgrep -f 'java -jar .*\.jar' || true)
-            if [ -n "$PID" ]; then
-              kill $PID
-            fi
-
-            JAR=$(find build/libs -maxdepth 1 -name '*.jar' ! -name '*-plain.jar' | head -n 1)
-
-            nohup java -jar "$JAR" > app.log 2>&1 < /dev/null &
+                      sudo systemctl restart mr-world-backend
