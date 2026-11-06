@@ -9,8 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.Instant;
 import java.util.Date;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -24,12 +22,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.jayway.jsonpath.JsonPath;
-
+import dev.sogong_girls.mr_world.domain.tour.dto.PriceCalculateRequest;
+import dev.sogong_girls.mr_world.domain.tour.dto.PriceResponse;
+import dev.sogong_girls.mr_world.domain.tour.service.TourService;
 import dev.sogong_girls.mr_world.domain.user.entity.User;
 import dev.sogong_girls.mr_world.domain.booking.service.AdminBookingService;
 import dev.sogong_girls.mr_world.domain.user.enums.Role;
@@ -53,6 +51,7 @@ class JwtAuthenticationIntegrationTest {
     @Autowired JwtProperties properties;
     @Autowired TransactionTemplate transactionTemplate;
     @MockitoBean AdminBookingService adminBookingService;
+    @MockitoBean TourService tourService;
 
     @BeforeEach
     void setUp() {
@@ -98,15 +97,15 @@ class JwtAuthenticationIntegrationTest {
         signup();
         MvcResult login = login();
         Cookie oldRefresh = cookie(login, "refresh_token");
-        MvcResult refreshed = mvc.perform(post("/api/auth/refresh").with(browserCsrf()).cookie(oldRefresh,
+        MvcResult refreshed = mvc.perform(post("/api/auth/refresh").cookie(oldRefresh,
                 new Cookie("access_token", expiredAccessToken())))
                 .andExpect(status().isNoContent()).andReturn();
         assertThat(cookie(refreshed, "refresh_token").getValue()).isNotEqualTo(oldRefresh.getValue());
         mvc.perform(get("/api/users/me").cookie(cookie(refreshed, "access_token")))
                 .andExpect(status().isOk());
-        mvc.perform(post("/api/auth/refresh").with(browserCsrf()).cookie(oldRefresh))
+        mvc.perform(post("/api/auth/refresh").cookie(oldRefresh))
                 .andExpect(status().isUnauthorized());
-        mvc.perform(post("/api/auth/refresh").with(browserCsrf()).cookie(cookie(refreshed, "refresh_token")))
+        mvc.perform(post("/api/auth/refresh").cookie(cookie(refreshed, "refresh_token")))
                 .andExpect(status().isNoContent());
     }
 
@@ -114,13 +113,13 @@ class JwtAuthenticationIntegrationTest {
     void logoutClearsCookiesAndRevokesRefreshToken() throws Exception {
         signup();
         MvcResult login = login();
-        MvcResult logout = mvc.perform(post("/api/auth/logout").with(browserCsrf()).cookie(cookie(login, "refresh_token")))
+        MvcResult logout = mvc.perform(post("/api/auth/logout").cookie(cookie(login, "refresh_token")))
                 .andExpect(status().isNoContent()).andReturn();
         assertThat(cookie(logout, "access_token").getMaxAge()).isZero();
         assertThat(cookie(logout, "refresh_token").getMaxAge()).isZero();
-        mvc.perform(post("/api/auth/refresh").with(browserCsrf()).cookie(cookie(login, "refresh_token")))
+        mvc.perform(post("/api/auth/refresh").cookie(cookie(login, "refresh_token")))
                 .andExpect(status().isUnauthorized());
-        mvc.perform(post("/api/auth/logout").with(browserCsrf())).andExpect(status().isNoContent());
+        mvc.perform(post("/api/auth/logout")).andExpect(status().isNoContent());
     }
 
     @Test
@@ -133,7 +132,8 @@ class JwtAuthenticationIntegrationTest {
         String refresh = tokenProvider.createTokens(1L, Role.USER).refreshToken();
         mvc.perform(get("/api/users/me").cookie(new Cookie("access_token", refresh)))
                 .andExpect(status().isUnauthorized());
-        mvc.perform(post("/api/auth/refresh").with(browserCsrf())).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/auth/refresh")).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/bookings/1/payments")).andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -148,15 +148,17 @@ class JwtAuthenticationIntegrationTest {
     }
 
     @Test
-    void refreshAndLogoutStillRequireCsrf() throws Exception {
-        signup();
-        Cookie refresh = cookie(login(), "refresh_token");
-        mvc.perform(post("/api/auth/refresh").cookie(refresh))
-                .andExpect(status().isForbidden());
-        mvc.perform(post("/api/auth/logout").cookie(refresh))
-                .andExpect(status().isForbidden());
-        mvc.perform(post("/api/auth/refresh").with(browserCsrf()).cookie(refresh))
-                .andExpect(status().isNoContent());
+    void calculatesTourPriceWithoutAuthenticationOrCsrf() throws Exception {
+        var request = new PriceCalculateRequest(1L, 2L, 3L, 2, List.of());
+        given(tourService.calculatePrice(1L, request)).willReturn(new PriceResponse(200000, 10000, 190000));
+
+        mvc.perform(post("/api/tours/1/price").contentType(MediaType.APPLICATION_JSON).content("""
+                {"tourStyleId":1,"hotelOptionId":2,"foodOptionId":3,"participantsCount":2,"addons":[]}
+                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalPrice").value(200000))
+                .andExpect(jsonPath("$.discountPrice").value(10000))
+                .andExpect(jsonPath("$.finalPrice").value(190000));
     }
 
     @Test
@@ -164,7 +166,7 @@ class JwtAuthenticationIntegrationTest {
         mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options("/api/auth/login")
                 .header("Origin", "http://localhost:3000")
                 .header("Access-Control-Request-Method", "POST")
-                .header("Access-Control-Request-Headers", "content-type,x-xsrf-token"))
+                .header("Access-Control-Request-Headers", "content-type"))
                 .andExpect(status().isOk())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
                         .header().string("Access-Control-Allow-Credentials", "true"));
@@ -190,23 +192,6 @@ class JwtAuthenticationIntegrationTest {
         Cookie cookie = result.getResponse().getCookie(name);
         assertThat(cookie).isNotNull();
         return cookie;
-    }
-
-    private RequestPostProcessor browserCsrf() throws Exception {
-        MvcResult result = mvc.perform(get("/api/auth/csrf")).andExpect(status().isOk()).andReturn();
-        Cookie csrfCookie = cookie(result, "XSRF-TOKEN");
-        String csrfHeaderName = JsonPath.read(result.getResponse().getContentAsString(), "$.headerName");
-        String csrfToken = JsonPath.read(result.getResponse().getContentAsString(), "$.token");
-        return request -> {
-            var cookies = new ArrayList<Cookie>();
-            if (request.getCookies() != null) {
-                Collections.addAll(cookies, request.getCookies());
-            }
-            cookies.add(csrfCookie);
-            request.setCookies(cookies.toArray(Cookie[]::new));
-            request.addHeader(csrfHeaderName, csrfToken);
-            return request;
-        };
     }
 
     private String expiredAccessToken() {
