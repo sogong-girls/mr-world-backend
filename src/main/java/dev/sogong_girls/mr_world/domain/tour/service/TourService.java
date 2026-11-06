@@ -68,16 +68,16 @@ public class TourService {
                 .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
 
         if (!id.equals(style.getTourId()) || !id.equals(hotel.getTourId()) || !id.equals(food.getTourId())) {
-            throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
+            throw new BusinessException(BusinessErrorCode.INVALID_INPUT, "해당 투어에 존재하지 않는 옵션입니다.");
         }
 
         int pricePerParticipant = Math.addExact(style.getBasePrice(), hotel.getPrice());
         pricePerParticipant = Math.addExact(pricePerParticipant, food.getPrice());
 
-        if (request.addons() != null) {
-            for (AddonRequest addonReq : request.addons()) {
+        if (request.addonOptions() != null) {
+            for (AddonRequest addonReq : request.addonOptions()) {
                 if (addonReq.addonOptionId() == null) {
-                    throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
+                    throw new BusinessException(BusinessErrorCode.INVALID_INPUT, "해당 투어에 존재하지 않는 추가 옵션입니다.");
                 }
                 AddonOption addon = addonOptionRepository.findById(addonReq.addonOptionId())
                         .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
@@ -92,32 +92,15 @@ public class TourService {
         return new PriceResponse(totalPrice, 0, totalPrice);
     }
 
-    public PriceResponse calculatePriceByIds(Long tourId, Long tourStyleId, Long hotelOptionId, Long foodOptionId,
-            List<Long> addonOptionIds, Integer participantsCount) {
-        tourRepository.findById(tourId)
-                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+    public PriceResponse calculatePriceByIds(Tour tour, TourStyle tourStyle, HotelOption hotelOption,
+            FoodOption foodOption,
+            List<AddonOption> addonOptions, Integer participantsCount) {
 
-        TourStyle style = tourStyleRepository.findById(tourStyleId)
-                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
-        HotelOption hotel = hotelOptionRepository.findById(hotelOptionId)
-                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
-        FoodOption food = foodOptionRepository.findById(foodOptionId)
-                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+        int pricePerParticipant = Math.addExact(tourStyle.getBasePrice(), hotelOption.getPrice());
+        pricePerParticipant = Math.addExact(pricePerParticipant, foodOption.getPrice());
 
-        if (!tourId.equals(style.getTourId()) || !tourId.equals(hotel.getTourId()) || tourId.equals(food.getTourId())) {
-            throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
-        }
-
-        int pricePerParticipant = Math.addExact(style.getBasePrice(), hotel.getPrice());
-        pricePerParticipant = Math.addExact(pricePerParticipant, food.getPrice());
-
-        if (addonOptionIds != null) {
-            for (Long addonId : addonOptionIds) {
-                AddonOption addon = addonOptionRepository.findById(addonId)
-                        .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
-                if (!tourId.equals(addon.getTourId())) {
-                    throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
-                }
+        if (addonOptions != null) {
+            for (AddonOption addon : addonOptions) {
                 pricePerParticipant = Math.addExact(pricePerParticipant, addon.getPrice());
             }
         }

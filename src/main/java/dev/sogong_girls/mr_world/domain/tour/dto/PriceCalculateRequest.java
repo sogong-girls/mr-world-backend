@@ -12,7 +12,7 @@ public record PriceCalculateRequest(
         @NotNull Long hotelOptionId,
         @NotNull Long foodOptionId,
         @NotNull @Min(1) Integer participantsCount,
-        @Valid List<AddonRequest> addons) {
+        @Valid List<AddonRequest> addonOptions) {
 
     public record AddonRequest(
             Long addonOptionId,

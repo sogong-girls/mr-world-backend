@@ -20,13 +20,18 @@ import dev.sogong_girls.mr_world.domain.booking.entity.SmsNotification;
 import dev.sogong_girls.mr_world.domain.booking.enums.TourStatus;
 import dev.sogong_girls.mr_world.domain.booking.mapper.SmsNotificationMapper;
 import dev.sogong_girls.mr_world.domain.booking.repository.SmsNotificationRepository;
+import dev.sogong_girls.mr_world.domain.user.entity.User;
+import dev.sogong_girls.mr_world.domain.user.repository.UserRepository;
 import dev.sogong_girls.mr_world.global.config.AppProperties;
+import dev.sogong_girls.mr_world.global.exception.BusinessErrorCode;
+import dev.sogong_girls.mr_world.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class SmsNotificationService {
     private final SmsNotificationRepository smsNotificationRepository;
+    private final UserRepository userRepository;
     private final SmsNotificationMapper smsNotificationMapper;
     private final AppProperties properties;
 
@@ -54,8 +59,12 @@ public class SmsNotificationService {
                     .build());
         }
 
+        User user = userRepository.findById(booking.getUserId())
+                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+
         notifications.add(SmsNotification.builder()
                 .bookingId(booking.getId())
+                .phoneNumber(user.getPhoneNumber())
                 .sendDue(booking.getStartAt().minusHours(24))
                 .message("여행 출발 24시간 전 안내입니다.")
                 .build());

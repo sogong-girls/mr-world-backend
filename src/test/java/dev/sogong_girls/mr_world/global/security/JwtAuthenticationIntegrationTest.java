@@ -153,7 +153,7 @@ class JwtAuthenticationIntegrationTest {
         given(tourService.calculatePrice(1L, request)).willReturn(new PriceResponse(200000, 10000, 190000));
 
         mvc.perform(post("/api/tours/1/price").contentType(MediaType.APPLICATION_JSON).content("""
-                {"tourStyleId":1,"hotelOptionId":2,"foodOptionId":3,"participantsCount":2,"addons":[]}
+                {"tourStyleId":1,"hotelOptionId":2,"foodOptionId":3,"participantsCount":2,"addonOptions":[]}
                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalPrice").value(200000))
