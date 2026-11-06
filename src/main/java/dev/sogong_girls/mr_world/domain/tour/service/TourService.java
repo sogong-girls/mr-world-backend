@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import dev.sogong_girls.mr_world.domain.tour.dto.PriceCalculateRequest;
+import dev.sogong_girls.mr_world.domain.tour.dto.PriceCalculateRequest.AddonRequest;
 import dev.sogong_girls.mr_world.domain.tour.dto.PriceResponse;
 import dev.sogong_girls.mr_world.domain.tour.dto.TourDetailResponse;
 import dev.sogong_girls.mr_world.domain.tour.dto.TourResponse;
@@ -73,12 +74,12 @@ public class TourService {
         int pricePerParticipant = Math.addExact(style.getBasePrice(), hotel.getPrice());
         pricePerParticipant = Math.addExact(pricePerParticipant, food.getPrice());
 
-        if (request.bookingAddonIds() != null) {
-            for (Long addonId : request.bookingAddonIds()) {
-                if (addonId == null) {
+        if (request.addons() != null) {
+            for (AddonRequest addonReq : request.addons()) {
+                if (addonReq.addonOptionId() == null) {
                     throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
                 }
-                AddonOption addon = addonOptionRepository.findById(addonId)
+                AddonOption addon = addonOptionRepository.findById(addonReq.addonOptionId())
                         .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
                 if (!id.equals(addon.getTourId())) {
                     throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
@@ -88,6 +89,40 @@ public class TourService {
         }
 
         int totalPrice = Math.multiplyExact(pricePerParticipant, request.participantsCount());
+        return new PriceResponse(totalPrice, 0, totalPrice);
+    }
+
+    public PriceResponse calculatePriceByIds(Long tourId, Long tourStyleId, Long hotelOptionId, Long foodOptionId,
+            List<Long> addonOptionIds, Integer participantsCount) {
+        tourRepository.findById(tourId)
+                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+
+        TourStyle style = tourStyleRepository.findById(tourStyleId)
+                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+        HotelOption hotel = hotelOptionRepository.findById(hotelOptionId)
+                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+        FoodOption food = foodOptionRepository.findById(foodOptionId)
+                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+
+        if (!tourId.equals(style.getTourId()) || !tourId.equals(hotel.getTourId()) || tourId.equals(food.getTourId())) {
+            throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
+        }
+
+        int pricePerParticipant = Math.addExact(style.getBasePrice(), hotel.getPrice());
+        pricePerParticipant = Math.addExact(pricePerParticipant, food.getPrice());
+
+        if (addonOptionIds != null) {
+            for (Long addonId : addonOptionIds) {
+                AddonOption addon = addonOptionRepository.findById(addonId)
+                        .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+                if (!tourId.equals(addon.getTourId())) {
+                    throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
+                }
+                pricePerParticipant = Math.addExact(pricePerParticipant, addon.getPrice());
+            }
+        }
+
+        int totalPrice = Math.multiplyExact(pricePerParticipant, participantsCount);
         return new PriceResponse(totalPrice, 0, totalPrice);
     }
 }

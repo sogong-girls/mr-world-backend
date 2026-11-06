@@ -16,7 +16,6 @@ import dev.sogong_girls.mr_world.domain.booking.enums.TourStatus;
 import dev.sogong_girls.mr_world.domain.booking.mapper.BookingMapper;
 import dev.sogong_girls.mr_world.domain.booking.repository.BookingAddonRepository;
 import dev.sogong_girls.mr_world.domain.booking.repository.BookingRepository;
-import dev.sogong_girls.mr_world.domain.tour.dto.PriceCalculateRequest;
 import dev.sogong_girls.mr_world.domain.tour.dto.PriceResponse;
 import dev.sogong_girls.mr_world.domain.tour.entity.AddonOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.FoodOption;
@@ -68,9 +67,9 @@ public class BookingService {
                 request.foodOptionId(), addonOptionIds);
 
         // 금액 및 상태 결정
-        PriceResponse price = tourService.calculatePrice(tour.getId(), new PriceCalculateRequest(
+        PriceResponse price = tourService.calculatePriceByIds(tour.getId(),
                 options.style().getId(), options.hotel().getId(), options.food().getId(),
-                request.participantsCount(), addonOptionIds));
+                addonOptionIds, request.participantsCount());
 
         TourStatus status = request.participantsCount() >= 3 ? TourStatus.CONFIRMED : TourStatus.PENDING;
 
@@ -162,9 +161,10 @@ public class BookingService {
         validateBooking(booking.getTour(), booking.getTourStyleId(), booking.getHotelOption().getId(),
                 booking.getFoodOption().getId(), addonOptionIds);
 
-        PriceResponse price = tourService.calculatePrice(tourId, new PriceCalculateRequest(
-                booking.getTourStyleId(), booking.getHotelOption().getId(), booking.getFoodOption().getId(),
-                booking.getParticipantsCount(), addonOptionIds));
+        PriceResponse price = tourService.calculatePriceByIds(tourId,
+                booking.getTourStyleId(), booking.getHotelOption().getId(),
+                booking.getFoodOption().getId(), addonOptionIds, booking.getParticipantsCount());
+
         booking.updateOptions(null, null, null, null, price.totalPrice(), price.discountPrice());
 
         return bookingMapper.toDetailResponse(booking);
