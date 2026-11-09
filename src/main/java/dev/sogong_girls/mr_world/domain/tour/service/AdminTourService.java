@@ -1,5 +1,11 @@
 package dev.sogong_girls.mr_world.domain.tour.service;
 
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,6 +17,8 @@ import dev.sogong_girls.mr_world.domain.tour.entity.FoodOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.HotelOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.Tour;
 import dev.sogong_girls.mr_world.domain.tour.entity.TourStyle;
+import dev.sogong_girls.mr_world.domain.tour.enums.TourStyleType;
+import dev.sogong_girls.mr_world.domain.tour.enums.TourTheme;
 import dev.sogong_girls.mr_world.domain.tour.mapper.TourMapper;
 import dev.sogong_girls.mr_world.domain.tour.repository.AddonOptionRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.FoodOptionRepository;
@@ -31,12 +39,75 @@ public class AdminTourService {
     private final AddonOptionRepository addonOptionRepository;
     private final TourMapper tourMapper;
 
-    private boolean validatePlan(Long id) {
-        throw new UnsupportedOperationException("validatePlan is not implemented yet");
+    private void validatePlan(TourCreateRequest request) {
+        if (request.tourStyles() == null) {
+            return;
+        }
+
+        EnumSet<TourStyleType> styles = EnumSet.noneOf(TourStyleType.class);
+        for (TourCreateRequest.TourStyleRequest style : request.tourStyles()) {
+            if (style == null || style.type() == null) {
+                throw new BusinessException(BusinessErrorCode.INVALID_INPUT, "투어 스타일이 필요합니다.");
+            }
+            if (!styles.add(style.type())) {
+                throw new BusinessException(BusinessErrorCode.INVALID_INPUT, "투어 스타일은 중복될 수 없습니다.");
+            }
+            if ((request.tourTheme() == TourTheme.HONEYMOON || request.tourTheme() == TourTheme.PARENT)
+                    && style.type() == TourStyleType.CLASSIC) {
+                throw new BusinessException(BusinessErrorCode.INVALID_INPUT,
+                        "허니문, 효도 여행은 Classic 스타일을 선택할 수 없습니다.");
+            }
+
+            int grade = style.type().getGrade();
+            if (style.hotelOption() != null
+                    && (style.hotelOption().grade() == null || style.hotelOption().grade().getGrade() != grade)) {
+                throw new BusinessException(BusinessErrorCode.INVALID_INPUT,
+                        "투어 스타일과 호텔 옵션의 등급이 일치하지 않습니다.");
+            }
+            if (style.foodOption() != null
+                    && (style.foodOption().type() == null || style.foodOption().type().getGrade() != grade)) {
+                throw new BusinessException(BusinessErrorCode.INVALID_INPUT,
+                        "투어 스타일과 식사 옵션의 등급이 일치하지 않습니다.");
+            }
+        }
+    }
+
+    private void validatePlan(Tour tour, List<TourStyle> tourStyles,
+            Map<Long, HotelOption> hotels, Map<Long, FoodOption> foods) {
+        EnumSet<TourStyleType> styles = EnumSet.noneOf(TourStyleType.class);
+        for (TourStyle style : tourStyles) {
+            if (style.getType() == null || !styles.add(style.getType())) {
+                throw new BusinessException(BusinessErrorCode.INVALID_INPUT, "투어 스타일은 중복될 수 없습니다.");
+            }
+            if ((tour.getTourTheme() == TourTheme.HONEYMOON || tour.getTourTheme() == TourTheme.PARENT)
+                    && style.getType() == TourStyleType.CLASSIC) {
+                throw new BusinessException(BusinessErrorCode.INVALID_INPUT,
+                        "허니문, 효도 여행은 Classic 스타일을 선택할 수 없습니다.");
+            }
+
+            int grade = style.getType().getGrade();
+            if (style.getHotelOptionId() != null) {
+                HotelOption hotel = hotels.get(style.getHotelOptionId());
+                if (hotel == null || hotel.getGrade() == null || hotel.getGrade().getGrade() != grade) {
+                    throw new BusinessException(BusinessErrorCode.INVALID_INPUT,
+                            "투어 스타일과 호텔 옵션의 등급이 일치하지 않습니다.");
+                }
+            }
+            if (style.getFoodOptionId() != null) {
+                FoodOption food = foods.get(style.getFoodOptionId());
+                if (food == null || food.getType() == null || food.getType().getGrade() != grade) {
+                    throw new BusinessException(BusinessErrorCode.INVALID_INPUT,
+                            "투어 스타일과 식사 옵션의 등급이 일치하지 않습니다.");
+                }
+            }
+        }
     }
 
     @Transactional
     public TourResponse createTour(TourCreateRequest request) {
+        // 생성 가능한 옵션 및 조건을 충족하는지 검증
+        validatePlan(request);
+
         // 1단계: Tour 객체 생성
         Tour tour = tourRepository.save(Tour.builder()
                 .name(request.name())
@@ -118,6 +189,13 @@ public class AdminTourService {
         // 1단계: Tour 객체 수정
         Tour tour = tourRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+        // 검증 전에 자동 flush가 발생하지 않도록 수정할 엔티티 먼저 조회
+        List<TourStyle> tourStyles = tourStyleRepository.findAllByTourId(id);
+        Map<Long, HotelOption> hotels = hotelOptionRepository.findAllByTourId(id).stream()
+                .collect(Collectors.toMap(HotelOption::getId, Function.identity()));
+        Map<Long, FoodOption> foods = foodOptionRepository.findAllByTourId(id).stream()
+                .collect(Collectors.toMap(FoodOption::getId, Function.identity()));
+
         tour.updateInfo(request.name(), request.departure(), request.destination(),
                 request.tourTheme(), request.transportType(), request.souvenirId(),
                 request.nights(), request.days(), request.departureTime(), request.arrivalTime(),
@@ -138,7 +216,7 @@ public class AdminTourService {
                 Long hotelOptionId = null;
                 if (styleRequest.hotelOption() != null) {
                     TourUpdateRequest.HotelOptionRequest hotelRequest = styleRequest.hotelOption();
-                    if (hotelRequest.id() == null || !hotelRequest.id().equals(style.getHotelOptionId())) {
+                    if (hotelRequest.id() == null) {
                         throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
                     }
                     HotelOption hotel = hotelOptionRepository.findById(hotelRequest.id())
@@ -154,7 +232,7 @@ public class AdminTourService {
                 Long foodOptionId = null;
                 if (styleRequest.foodOption() != null) {
                     TourUpdateRequest.FoodOptionRequest foodRequest = styleRequest.foodOption();
-                    if (foodRequest.id() == null || !foodRequest.id().equals(style.getFoodOptionId())) {
+                    if (foodRequest.id() == null) {
                         throw new BusinessException(BusinessErrorCode.INVALID_INPUT);
                     }
                     FoodOption food = foodOptionRepository.findById(foodRequest.id())
@@ -174,6 +252,8 @@ public class AdminTourService {
                         hotelOptionId, foodOptionId, styleRequest.description());
             }
         }
+
+        validatePlan(tour, tourStyles, hotels, foods);
 
         // 3단계: 수정이 필요한 AddonOption 객체들 수정
         if (request.addonOptions() != null) {
