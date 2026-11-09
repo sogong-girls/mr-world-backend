@@ -60,19 +60,23 @@ public class TourService {
         tourRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
 
-        TourStyle style = tourStyleRepository.findById(request.tourStyleId())
+        TourStyle tourStyle = tourStyleRepository.findById(request.tourStyleId())
                 .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
-        HotelOption hotel = hotelOptionRepository.findById(request.hotelOptionId())
+        HotelOption hotelOption = hotelOptionRepository.findById(request.hotelOptionId())
                 .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
-        FoodOption food = foodOptionRepository.findById(request.foodOptionId())
+        FoodOption foodOption = foodOptionRepository.findById(request.foodOptionId())
                 .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
 
-        if (!id.equals(style.getTourId()) || !id.equals(hotel.getTourId()) || !id.equals(food.getTourId())) {
+        if (!id.equals(tourStyle.getTourId()) || !id.equals(hotelOption.getTourId())
+                || !id.equals(foodOption.getTourId())) {
             throw new BusinessException(BusinessErrorCode.INVALID_INPUT, "해당 투어에 존재하지 않는 옵션입니다.");
         }
 
-        int pricePerParticipant = Math.addExact(style.getBasePrice(), hotel.getPrice());
-        pricePerParticipant = Math.addExact(pricePerParticipant, food.getPrice());
+        int pricePerParticipant = tourStyle.getBasePrice();
+        if (hotelOption.getGrade().getGrade() > tourStyle.getType().getGrade())
+            pricePerParticipant = Math.addExact(pricePerParticipant, hotelOption.getPrice());
+        if (foodOption.getType().getGrade() > tourStyle.getType().getGrade())
+            pricePerParticipant = Math.addExact(pricePerParticipant, foodOption.getPrice());
 
         if (request.addonOptions() != null) {
             for (AddonRequest addonReq : request.addonOptions()) {
@@ -96,8 +100,11 @@ public class TourService {
             FoodOption foodOption,
             List<AddonOption> addonOptions, Integer participantsCount) {
 
-        int pricePerParticipant = Math.addExact(tourStyle.getBasePrice(), hotelOption.getPrice());
-        pricePerParticipant = Math.addExact(pricePerParticipant, foodOption.getPrice());
+        int pricePerParticipant = tourStyle.getBasePrice();
+        if (hotelOption.getGrade().getGrade() > tourStyle.getType().getGrade())
+            pricePerParticipant = Math.addExact(pricePerParticipant, hotelOption.getPrice());
+        if (foodOption.getType().getGrade() > tourStyle.getType().getGrade())
+            pricePerParticipant = Math.addExact(pricePerParticipant, foodOption.getPrice());
 
         if (addonOptions != null) {
             for (AddonOption addon : addonOptions) {
