@@ -123,7 +123,6 @@ public class BookingService {
             throw new BusinessException(BusinessErrorCode.UNAUTHORIZED);
         checkPayable(booking);
 
-        Long tourId = booking.getTour().getId();
         TourStyle style = request.tourStyleId() == null ? null
                 : tourStyleRepository.findById(request.tourStyleId())
                         .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
@@ -253,9 +252,4 @@ public class BookingService {
             throw new BusinessException(BusinessErrorCode.ALREADY_PAID);
         }
     }
-
-    // private boolean processPayment(Long id) {
-    // throw new UnsupportedOperationException("processPayment is not implemented
-    // yet");
-    // }
 }
