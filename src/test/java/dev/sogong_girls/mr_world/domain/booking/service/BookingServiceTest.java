@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
@@ -65,6 +66,37 @@ class BookingServiceTest {
     BookingMapper bookingMapper;
     @InjectMocks
     BookingService bookingService;
+
+    @Test
+    void returnsBookingDetailsForOwner() {
+        Booking booking = Booking.builder().userId(10L).build();
+        given(bookingRepository.findWithOptionsById(1L)).willReturn(Optional.of(booking));
+
+        bookingService.getBookingById(1L, 10L);
+
+        verify(bookingMapper).toDetailResponse(booking);
+    }
+
+    @Test
+    void rejectsBookingDetailsForAnotherUser() {
+        Booking booking = Booking.builder().userId(10L).build();
+        given(bookingRepository.findWithOptionsById(1L)).willReturn(Optional.of(booking));
+
+        assertThatThrownBy(() -> bookingService.getBookingById(1L, 20L))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(BusinessErrorCode.UNAUTHORIZED));
+        verifyNoInteractions(bookingMapper);
+    }
+
+    @Test
+    void rejectsMissingBookingDetails() {
+        given(bookingRepository.findWithOptionsById(1L)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> bookingService.getBookingById(1L, 10L))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(BusinessErrorCode.NOT_FOUND));
+        verifyNoInteractions(bookingMapper);
+    }
 
     @ParameterizedTest
     @CsvSource({

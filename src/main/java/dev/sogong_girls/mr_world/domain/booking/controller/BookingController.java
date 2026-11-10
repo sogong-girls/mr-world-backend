@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import dev.sogong_girls.mr_world.global.security.JwtTokenProvider.JwtPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,6 +23,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class BookingController {
     private final BookingService service;
+
+    @GetMapping("/api/bookings/{id}")
+    public ResponseEntity<BookingDetailResponse> getBookingById(@PathVariable("id") Long id,
+            @AuthenticationPrincipal JwtPrincipal principal) {
+        return ResponseEntity.ok(service.getBookingById(id, principal.userId()));
+    }
 
     @PostMapping("/api/bookings")
     public ResponseEntity<BookingDetailResponse> createBooking(@AuthenticationPrincipal JwtPrincipal principal,

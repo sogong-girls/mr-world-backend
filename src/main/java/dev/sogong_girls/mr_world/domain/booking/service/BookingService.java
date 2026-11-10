@@ -51,6 +51,15 @@ public class BookingService {
 
     private final BookingMapper bookingMapper;
 
+    @Transactional(readOnly = true)
+    public BookingDetailResponse getBookingById(Long bookingId, Long userId) {
+        Booking booking = bookingRepository.findWithOptionsById(bookingId)
+                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+        if (!booking.getUserId().equals(userId))
+            throw new BusinessException(BusinessErrorCode.UNAUTHORIZED);
+        return bookingMapper.toDetailResponse(booking);
+    }
+
     @Transactional
     public BookingDetailResponse createBooking(Long userId, BookingCreateRequest request) {
         // 1단계: Booking 객체 생성
@@ -76,6 +85,7 @@ public class BookingService {
                 options.style(), options.hotel(), options.food(),
                 options.addonOptions(), request.participantsCount());
 
+        // TODO: PENDING 상태인 팀을 더 찾아서 인원수 맞추기
         TourStatus status = request.participantsCount() >= 3 ? TourStatus.CONFIRMED : TourStatus.PENDING;
 
         Booking booking = bookingRepository.save(Booking.builder()
