@@ -69,7 +69,7 @@ class AdminBookingServiceTest {
 
         assertThat(service.getAllBookingList()).extracting(br -> br.id())
                 .containsExactlyInAnyOrder(first.getId(), second.getId());
-        assertThat(service.getAllBookingList()).extracting(br -> br.id())
+        assertThat(service.getAllBookingList()).extracting(br -> br.userId())
                 .containsExactlyInAnyOrder(10L, 20L);
     }
 
