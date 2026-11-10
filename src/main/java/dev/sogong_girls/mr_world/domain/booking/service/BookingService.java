@@ -5,6 +5,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +40,8 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class BookingService {
+    private static final int MIN_PARTICIPANTS = 3;
+
     private final BookingRepository bookingRepository;
     private final BookingAddonRepository bookingAddonRepository;
     private final AddonOptionRepository addonOptionRepository;
@@ -50,6 +53,15 @@ public class BookingService {
     private final SmsNotificationService smsNotificationService;
 
     private final BookingMapper bookingMapper;
+
+    @Transactional(readOnly = true)
+    public BookingDetailResponse getBookingById(Long bookingId, Long userId) {
+        Booking booking = bookingRepository.findWithOptionsById(bookingId)
+                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+        if (!booking.getUserId().equals(userId))
+            throw new BusinessException(BusinessErrorCode.UNAUTHORIZED);
+        return bookingMapper.toDetailResponse(booking);
+    }
 
     @Transactional
     public BookingDetailResponse createBooking(Long userId, BookingCreateRequest request) {
@@ -76,7 +88,7 @@ public class BookingService {
                 options.style(), options.hotel(), options.food(),
                 options.addonOptions(), request.participantsCount());
 
-        TourStatus status = request.participantsCount() >= 3 ? TourStatus.CONFIRMED : TourStatus.PENDING;
+        TourStatus status = determineBookingStatus(request);
 
         Booking booking = bookingRepository.save(Booking.builder()
                 .tour(tour)
@@ -123,7 +135,6 @@ public class BookingService {
             throw new BusinessException(BusinessErrorCode.UNAUTHORIZED);
         checkPayable(booking);
 
-        Long tourId = booking.getTour().getId();
         TourStyle style = request.tourStyleId() == null ? null
                 : tourStyleRepository.findById(request.tourStyleId())
                         .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
@@ -186,6 +197,28 @@ public class BookingService {
 
         booking.updatePaidAt();
         return bookingMapper.toResponse(booking);
+    }
+
+    private TourStatus determineBookingStatus(BookingCreateRequest request) {
+        int totalParticipants = request.participantsCount();
+        if (totalParticipants >= MIN_PARTICIPANTS) {
+            return TourStatus.CONFIRMED;
+        }
+
+        // 기존 예약도 최소 1명이므로 부족한 인원 수만큼의 예약만 조회
+        List<Booking> pendingBookings = bookingRepository
+                .findAllByTourIdAndStartAtAndEndAtAndStatusOrderByCreatedAtAscIdAsc(
+                        request.tourId(), request.startAt(), request.endAt(), TourStatus.PENDING,
+                        PageRequest.of(0, MIN_PARTICIPANTS - totalParticipants));
+
+        for (int i = 0; i < pendingBookings.size(); i++) {
+            totalParticipants += pendingBookings.get(i).getParticipantsCount();
+            if (totalParticipants >= MIN_PARTICIPANTS) {
+                pendingBookings.subList(0, i + 1).forEach(booking -> booking.updateStatus(TourStatus.CONFIRMED));
+                return TourStatus.CONFIRMED;
+            }
+        }
+        return TourStatus.PENDING;
     }
 
     private void validateBookingDate(Tour tour, LocalDateTime startAt, LocalDateTime endAt) {
@@ -253,9 +286,4 @@ public class BookingService {
             throw new BusinessException(BusinessErrorCode.ALREADY_PAID);
         }
     }
-
-    // private boolean processPayment(Long id) {
-    // throw new UnsupportedOperationException("processPayment is not implemented
-    // yet");
-    // }
 }
