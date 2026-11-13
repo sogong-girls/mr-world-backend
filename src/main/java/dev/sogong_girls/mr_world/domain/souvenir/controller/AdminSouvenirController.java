@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import dev.sogong_girls.mr_world.domain.souvenir.dto.SouvenirCreateRequest;
 import dev.sogong_girls.mr_world.domain.souvenir.dto.SouvenirResponse;
+import dev.sogong_girls.mr_world.domain.souvenir.dto.SouvenirStockResponse;
 import dev.sogong_girls.mr_world.domain.souvenir.dto.SouvenirUpdateRequest;
 import dev.sogong_girls.mr_world.domain.souvenir.dto.StockUpdateRequest;
 import dev.sogong_girls.mr_world.domain.souvenir.service.AdminSouvenirService;
@@ -25,7 +26,7 @@ public class AdminSouvenirController {
     private final AdminSouvenirService service;
 
     @GetMapping("/api/admin/souvenirs")
-    public ResponseEntity<List<SouvenirResponse>> getSouvenirList() {
+    public ResponseEntity<List<SouvenirStockResponse>> getSouvenirList() {
         return ResponseEntity.ok(service.getSouvenirList());
     }
 

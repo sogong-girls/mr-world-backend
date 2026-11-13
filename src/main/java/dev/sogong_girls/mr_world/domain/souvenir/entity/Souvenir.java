@@ -25,26 +25,21 @@ public class Souvenir {
     @Column(nullable = false)
     private String name;
 
-    private String brand;
-
     private String description;
 
     @Column(name = "stock_count", nullable = false)
     private Integer stockCount;
 
     @Builder
-    public Souvenir(String name, String brand, String description, Integer stockCount) {
+    public Souvenir(String name, String description, Integer stockCount) {
         this.name = name;
-        this.brand = brand;
         this.description = description;
         this.stockCount = stockCount;
     }
 
-    public void updateInfo(String name, String brand, String description) {
+    public void updateInfo(String name, String description) {
         if (name != null)
             this.name = name;
-        if (brand != null)
-            this.brand = brand;
         if (description != null)
             this.description = description;
     }

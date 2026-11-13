@@ -10,11 +10,13 @@ import static dev.sogong_girls.mr_world.domain.tour.enums.TourStyleType.GRAND;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -23,8 +25,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import dev.sogong_girls.mr_world.domain.souvenir.dto.SouvenirResponse;
+import dev.sogong_girls.mr_world.domain.souvenir.entity.Souvenir;
+import dev.sogong_girls.mr_world.domain.souvenir.mapper.SouvenirMapper;
+import dev.sogong_girls.mr_world.domain.souvenir.repository.SouvenirRepository;
 import dev.sogong_girls.mr_world.domain.tour.dto.PriceCalculateRequest;
 import dev.sogong_girls.mr_world.domain.tour.dto.PriceResponse;
+import dev.sogong_girls.mr_world.domain.tour.dto.TourDetailResponse;
 import dev.sogong_girls.mr_world.domain.tour.entity.FoodOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.HotelOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.Tour;
@@ -52,9 +59,47 @@ class TourServiceTest {
     @Mock
     AddonOptionRepository addonOptionRepository;
     @Mock
+    SouvenirRepository souvenirRepository;
+    @Mock
     TourMapper tourMapper;
+    @Mock
+    SouvenirMapper souvenirMapper;
     @InjectMocks
     TourService tourService;
+
+    @Test
+    void includesSouvenirInfoInTourDetail() {
+        Souvenir souvenir = Souvenir.builder().name("Keyring").description("Desc")
+                .stockCount(10).build();
+        SouvenirResponse souvenirResponse = new SouvenirResponse(5L, "Keyring", "Desc", 10);
+        given(tourRepository.findById(1L)).willReturn(Optional.of(Tour.builder().souvenirId(5L).build()));
+        given(souvenirRepository.findById(5L)).willReturn(Optional.of(souvenir));
+        given(souvenirMapper.toResponse(souvenir)).willReturn(souvenirResponse);
+
+        TourDetailResponse result = tourService.getTour(1L);
+
+        assertThat(result.souvenir()).isEqualTo(souvenirResponse);
+    }
+
+    @Test
+    void returnsNullSouvenirWhenTourHasNoSouvenir() {
+        given(tourRepository.findById(1L)).willReturn(Optional.of(Tour.builder().build()));
+
+        TourDetailResponse result = tourService.getTour(1L);
+
+        assertThat(result.souvenir()).isNull();
+        then(souvenirRepository).shouldHaveNoInteractions();
+    }
+
+    @Test
+    void returnsNullSouvenirWhenLinkedSouvenirIsMissing() {
+        given(tourRepository.findById(1L)).willReturn(Optional.of(Tour.builder().souvenirId(5L).build()));
+        given(souvenirRepository.findById(5L)).willReturn(Optional.empty());
+
+        TourDetailResponse result = tourService.getTour(1L);
+
+        assertThat(result.souvenir()).isNull();
+    }
 
     @ParameterizedTest(name = "{0}, hotel={1}, food={2} => {3}")
     @MethodSource("gradeCases")
@@ -97,7 +142,8 @@ class TourServiceTest {
     }
 
     // Base: 100,000, hotel: 30,000, food: 10,000 per person; two participants.
-    // Expected totals are explicit so the tests do not repeat the production comparison.
+    // Expected totals are explicit so the tests do not repeat the production
+    // comparison.
     static Stream<Arguments> gradeCases() {
         return Stream.of(
                 arguments(GRAND, _3_STAR, LUNCHBOX, 200000),
