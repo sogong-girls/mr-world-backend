@@ -4,6 +4,9 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import dev.sogong_girls.mr_world.domain.souvenir.dto.SouvenirResponse;
+import dev.sogong_girls.mr_world.domain.souvenir.mapper.SouvenirMapper;
+import dev.sogong_girls.mr_world.domain.souvenir.repository.SouvenirRepository;
 import dev.sogong_girls.mr_world.domain.tour.dto.PriceCalculateRequest;
 import dev.sogong_girls.mr_world.domain.tour.dto.PriceCalculateRequest.AddonRequest;
 import dev.sogong_girls.mr_world.domain.tour.dto.PriceResponse;
@@ -32,8 +35,10 @@ public class TourService {
     private final HotelOptionRepository hotelOptionRepository;
     private final FoodOptionRepository foodOptionRepository;
     private final AddonOptionRepository addonOptionRepository;
+    private final SouvenirRepository souvenirRepository;
 
     private final TourMapper tourMapper;
+    private final SouvenirMapper souvenirMapper;
 
     public List<TourResponse> getTourList() {
         return tourMapper.toResponses(tourRepository.findAll());
@@ -47,13 +52,26 @@ public class TourService {
         List<HotelOption> hotelOptions = hotelOptionRepository.findAllByTourId(id);
         List<FoodOption> foodOptions = foodOptionRepository.findAllByTourId(id);
         List<AddonOption> addonOptions = addonOptionRepository.findAllByTourId(id);
+        SouvenirResponse souvenir = findSouvenir(tour.getSouvenirId());
 
         return new TourDetailResponse(
                 tour.getId(), tour.getName(), tour.getDeparture(), tour.getDestination(),
-                tour.getTourTheme(), tour.getTransportType(), tour.getSouvenirId(),
+                tour.getTourTheme(), tour.getTransportType(), souvenir,
                 tour.getNights(), tour.getDays(), tour.getDepartureTime(), tour.getArrivalTime(),
                 tour.getCourse(), tour.getDescription(),
                 styles, hotelOptions, foodOptions, addonOptions);
+    }
+
+    /**
+     * 투어에 기념품이 없거나 연결된 기념품을 찾을 수 없으면 null을 반환한다.
+     */
+    private SouvenirResponse findSouvenir(Long souvenirId) {
+        if (souvenirId == null)
+            return null;
+
+        return souvenirRepository.findById(souvenirId)
+                .map(souvenirMapper::toResponse)
+                .orElse(null);
     }
 
     public PriceResponse calculatePrice(Long id, PriceCalculateRequest request) {

@@ -3,6 +3,7 @@ package dev.sogong_girls.mr_world.domain.tour.dto;
 import java.time.LocalTime;
 import java.util.List;
 
+import dev.sogong_girls.mr_world.domain.souvenir.dto.SouvenirResponse;
 import dev.sogong_girls.mr_world.domain.tour.entity.AddonOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.FoodOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.HotelOption;
@@ -17,7 +18,7 @@ public record TourDetailResponse(
         String destination,
         TourTheme tourTheme,
         TransportType transportType,
-        Long souvenirId,
+        SouvenirResponse souvenir,
         Integer nights,
         Integer days,
         LocalTime departureTime,

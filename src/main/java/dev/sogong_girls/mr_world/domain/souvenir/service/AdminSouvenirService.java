@@ -34,10 +34,9 @@ public class AdminSouvenirService {
     private final SouvenirMapper souvenirMapper;
 
     /**
-     * 기념품을 보내야 하는 예약 상태 (확정 + 결제 완료, 출발 전)
+     * 기념품을 보내야 하는 예약 상태 (결제 완료, 출발 전)
      */
-    private static final Set<TourStatus> SOUVENIR_REQUIRED_STATUSES = EnumSet.of(TourStatus.CONFIRMED,
-            TourStatus.BOOKED);
+    private static final Set<TourStatus> SOUVENIR_REQUIRED_STATUSES = EnumSet.of(TourStatus.BOOKED);
 
     @Transactional(readOnly = true)
     public List<SouvenirStockResponse> getSouvenirList() {
