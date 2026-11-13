@@ -39,6 +39,7 @@ out/
 ### Agents ###
 .agents/
 .claude/
+.mcp.json
 
 ### Environment Variables ###
 .env
