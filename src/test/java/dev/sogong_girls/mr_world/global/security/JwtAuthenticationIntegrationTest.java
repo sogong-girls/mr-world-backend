@@ -150,7 +150,7 @@ class JwtAuthenticationIntegrationTest {
     @Test
     void calculatesTourPriceWithoutAuthenticationOrCsrf() throws Exception {
         var request = new PriceCalculateRequest(1L, 2L, 3L, 2, List.of());
-        given(tourService.calculatePrice(1L, request)).willReturn(new PriceResponse(200000, 10000, 190000));
+        given(tourService.calculatePrice(1L, null, request)).willReturn(new PriceResponse(200000, 10000, 190000));
 
         mvc.perform(post("/api/tours/1/price").contentType(MediaType.APPLICATION_JSON).content("""
                 {"tourStyleId":1,"hotelOptionId":2,"foodOptionId":3,"participantsCount":2,"addonOptions":[]}
@@ -159,6 +159,21 @@ class JwtAuthenticationIntegrationTest {
                 .andExpect(jsonPath("$.totalPrice").value(200000))
                 .andExpect(jsonPath("$.discountPrice").value(10000))
                 .andExpect(jsonPath("$.finalPrice").value(190000));
+    }
+
+    @Test
+    void passesAuthenticatedUserIdToTourPriceCalculation() throws Exception {
+        var request = new PriceCalculateRequest(1L, 2L, 3L, 2, List.of());
+        String user = tokenProvider.createTokens(7L, Role.USER).accessToken();
+        given(tourService.calculatePrice(1L, 7L, request)).willReturn(new PriceResponse(200000, 20000, 180000));
+
+        mvc.perform(post("/api/tours/1/price").cookie(new Cookie("access_token", user))
+                .contentType(MediaType.APPLICATION_JSON).content("""
+                        {"tourStyleId":1,"hotelOptionId":2,"foodOptionId":3,"participantsCount":2,"addonOptions":[]}
+                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.discountPrice").value(20000))
+                .andExpect(jsonPath("$.finalPrice").value(180000));
     }
 
     @Test

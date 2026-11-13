@@ -1,5 +1,7 @@
 package dev.sogong_girls.mr_world.domain.tour.service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -23,6 +25,8 @@ import dev.sogong_girls.mr_world.domain.tour.repository.FoodOptionRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.HotelOptionRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.TourRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.TourStyleRepository;
+import dev.sogong_girls.mr_world.domain.user.entity.User;
+import dev.sogong_girls.mr_world.domain.user.repository.UserRepository;
 import dev.sogong_girls.mr_world.global.exception.BusinessErrorCode;
 import dev.sogong_girls.mr_world.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +40,7 @@ public class TourService {
     private final FoodOptionRepository foodOptionRepository;
     private final AddonOptionRepository addonOptionRepository;
     private final SouvenirRepository souvenirRepository;
+    private final UserRepository userRepository;
 
     private final TourMapper tourMapper;
     private final SouvenirMapper souvenirMapper;
@@ -74,7 +79,10 @@ public class TourService {
                 .orElse(null);
     }
 
-    public PriceResponse calculatePrice(Long id, PriceCalculateRequest request) {
+    /**
+     * @param userId 로그인한 사용자 ID. 비로그인 상태면 null이며, 이 경우 단골 할인은 적용되지 않는다.
+     */
+    public PriceResponse calculatePrice(Long id, Long userId, PriceCalculateRequest request) {
         tourRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
 
@@ -111,12 +119,12 @@ public class TourService {
         }
 
         int totalPrice = Math.multiplyExact(pricePerParticipant, request.participantsCount());
-        return new PriceResponse(totalPrice, 0, totalPrice);
+        return applyRegularDiscount(totalPrice, tourStyle, userId);
     }
 
     public PriceResponse calculatePriceByIds(Tour tour, TourStyle tourStyle, HotelOption hotelOption,
             FoodOption foodOption,
-            List<AddonOption> addonOptions, Integer participantsCount) {
+            List<AddonOption> addonOptions, Integer participantsCount, Long userId) {
 
         int pricePerParticipant = tourStyle.getBasePrice();
         if (hotelOption.getGrade().getGrade() > tourStyle.getType().getGrade())
@@ -131,6 +139,34 @@ public class TourService {
         }
 
         int totalPrice = Math.multiplyExact(pricePerParticipant, participantsCount);
-        return new PriceResponse(totalPrice, 0, totalPrice);
+        return applyRegularDiscount(totalPrice, tourStyle, userId);
+    }
+
+    /**
+     * 단골 사용자라면 투어 스타일의 단골 할인율(regularDiscount)을 적용한다.
+     * 최종 금액 = 전체 금액 × (1 - 할인율), 원 단위 미만은 반올림한다.
+     */
+    private PriceResponse applyRegularDiscount(int totalPrice, TourStyle tourStyle, Long userId) {
+        Float discountRate = tourStyle.getRegularDiscount();
+        if (discountRate == null || discountRate <= 0 || !isRegularUser(userId)) {
+            return new PriceResponse(totalPrice, 0, totalPrice);
+        }
+
+        // float -> double 변환 시 생기는 오차(0.1f -> 0.10000000149...)를 피하기 위해 문자열로 변환
+        BigDecimal rate = new BigDecimal(Float.toString(discountRate));
+        int finalPrice = BigDecimal.valueOf(totalPrice)
+                .multiply(BigDecimal.ONE.subtract(rate))
+                .setScale(0, RoundingMode.HALF_UP)
+                .intValueExact();
+        return new PriceResponse(totalPrice, totalPrice - finalPrice, finalPrice);
+    }
+
+    private boolean isRegularUser(Long userId) {
+        if (userId == null)
+            return false;
+
+        return userRepository.findById(userId)
+                .map(User::getIsRegular)
+                .orElse(false);
     }
 }

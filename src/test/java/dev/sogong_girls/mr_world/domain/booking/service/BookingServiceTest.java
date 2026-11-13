@@ -4,12 +4,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,6 +45,8 @@ import dev.sogong_girls.mr_world.domain.tour.repository.HotelOptionRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.TourRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.TourStyleRepository;
 import dev.sogong_girls.mr_world.domain.tour.service.TourService;
+import dev.sogong_girls.mr_world.domain.user.entity.User;
+import dev.sogong_girls.mr_world.domain.user.repository.UserRepository;
 import dev.sogong_girls.mr_world.global.exception.BusinessErrorCode;
 import dev.sogong_girls.mr_world.global.exception.BusinessException;
 
@@ -62,6 +66,8 @@ class BookingServiceTest {
     HotelOptionRepository hotelOptionRepository;
     @Mock
     FoodOptionRepository foodOptionRepository;
+    @Mock
+    UserRepository userRepository;
     @Mock
     TourService tourService;
     @Mock
@@ -100,6 +106,82 @@ class BookingServiceTest {
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(BusinessErrorCode.NOT_FOUND));
         verifyNoInteractions(bookingMapper);
+    }
+
+    @Test
+    void keepsUserNonRegularOnFirstPaidBooking() {
+        Booking booking = payableBooking();
+        User user = user(false);
+        given(bookingRepository.findById(1L)).willReturn(Optional.of(booking));
+        given(userRepository.findByIdForUpdate(10L)).willReturn(Optional.of(user));
+        given(bookingRepository.countByUserIdAndStatusIn(10L, EnumSet.of(TourStatus.BOOKED, TourStatus.DEPARTED, TourStatus.ARRIVED))).willReturn(0L);
+
+        bookingService.payBooking(1L, 10L);
+
+        assertThat(booking.getStatus()).isEqualTo(TourStatus.BOOKED);
+        assertThat(booking.getPaidAt()).isNotNull();
+        assertThat(user.getIsRegular()).isFalse();
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = { 1, 3 })
+    void makesUserRegularWhenPaidBookingsIncludingThisOneReachTwo(long previouslyPaidBookings) {
+        Booking booking = payableBooking();
+        User user = user(false);
+        given(bookingRepository.findById(1L)).willReturn(Optional.of(booking));
+        given(userRepository.findByIdForUpdate(10L)).willReturn(Optional.of(user));
+        given(bookingRepository.countByUserIdAndStatusIn(10L, EnumSet.of(TourStatus.BOOKED, TourStatus.DEPARTED, TourStatus.ARRIVED))).willReturn(previouslyPaidBookings);
+
+        bookingService.payBooking(1L, 10L);
+
+        assertThat(booking.getStatus()).isEqualTo(TourStatus.BOOKED);
+        assertThat(user.getIsRegular()).isTrue();
+    }
+
+    @Test
+    void skipsPaidBookingCountForAlreadyRegularUser() {
+        Booking booking = payableBooking();
+        User user = user(true);
+        given(bookingRepository.findById(1L)).willReturn(Optional.of(booking));
+        given(userRepository.findByIdForUpdate(10L)).willReturn(Optional.of(user));
+
+        bookingService.payBooking(1L, 10L);
+
+        assertThat(user.getIsRegular()).isTrue();
+        verify(bookingRepository, never()).countByUserIdAndStatusIn(any(), any());
+    }
+
+    @Test
+    void doesNotTouchUserWhenPaymentIsRejected() {
+        Booking booking = payableBooking();
+        given(bookingRepository.findById(1L)).willReturn(Optional.of(booking));
+
+        assertThatThrownBy(() -> bookingService.payBooking(1L, 20L))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(BusinessErrorCode.UNAUTHORIZED));
+        verifyNoInteractions(userRepository);
+    }
+
+    @Test
+    void doesNotTouchUserWhenBookingIsAlreadyPaid() {
+        Booking booking = payableBooking();
+        booking.updatePaidAt();
+        given(bookingRepository.findById(1L)).willReturn(Optional.of(booking));
+
+        assertThatThrownBy(() -> bookingService.payBooking(1L, 10L))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(BusinessErrorCode.ALREADY_PAID));
+        verifyNoInteractions(userRepository);
+    }
+
+    private Booking payableBooking() {
+        return Booking.builder().userId(10L).status(TourStatus.CONFIRMED).build();
+    }
+
+    private User user(boolean isRegular) {
+        User user = User.builder().loginId("user").build();
+        user.updateIsRegular(isRegular);
+        return user;
     }
 
     @ParameterizedTest
@@ -198,7 +280,7 @@ class BookingServiceTest {
         given(tourStyleRepository.findById(2L)).willReturn(Optional.of(style));
         given(hotelOptionRepository.findById(3L)).willReturn(Optional.of(hotel));
         given(foodOptionRepository.findById(4L)).willReturn(Optional.of(food));
-        given(tourService.calculatePriceByIds(tour, style, hotel, food, List.of(), participants))
+        given(tourService.calculatePriceByIds(tour, style, hotel, food, List.of(), participants, 10L))
                 .willReturn(new PriceResponse(200000, 0, 200000));
         given(bookingRepository.save(any(Booking.class))).willAnswer(invocation -> invocation.getArgument(0));
     }

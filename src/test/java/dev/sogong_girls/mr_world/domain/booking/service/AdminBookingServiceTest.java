@@ -10,10 +10,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.util.AopTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import dev.sogong_girls.mr_world.domain.booking.dto.BookingDetailResponse;
@@ -158,6 +160,63 @@ class AdminBookingServiceTest {
     void returnsEmptyListsWhenNoBookingsOrMessagesExist() {
         assertThat(service.getAllBookingList()).isEmpty();
         assertThat(service.getSmsNotificationList()).isEmpty();
+    }
+
+    // 투어 진행 상태 자동 전환: 기준 시각 NOW, 출발/도착 시각을 앞뒤로 배치
+    private static final LocalDateTime NOW = LocalDateTime.of(2026, 11, 13, 12, 0);
+
+    @ParameterizedTest(name = "{0}, start={1}h, end={2}h => {3}")
+    @CsvSource({
+            "BOOKED,    -1, 24, DEPARTED", // 출발 시각 경과
+            "BOOKED,     0, 24, DEPARTED", // 출발 시각 정각
+            "BOOKED,   -48, -1, ARRIVED", // 출발/도착 시각 모두 경과
+            "DEPARTED, -24, -1, ARRIVED", // 도착 시각 경과
+            "DEPARTED, -24,  0, ARRIVED", // 도착 시각 정각
+            "DEPARTED, -24,  1, DEPARTED", // 아직 여행 중
+            "BOOKED,     1, 24, BOOKED", // 출발 전
+            "CONFIRMED, -48, -1, CONFIRMED", // 결제하지 않은 예약은 대상 아님
+            "PENDING,  -48, -1, PENDING",
+            "ARRIVED,  -48, -1, ARRIVED",
+    })
+    void updatesTourProgressStatusByStartAndEndTime(TourStatus status, long startOffsetHours,
+            long endOffsetHours, TourStatus expected) {
+        Booking booking = booking(10L, status, NOW.plusHours(startOffsetHours), NOW.plusHours(endOffsetHours));
+        flushAndClear();
+
+        updateTourProgressStatusesAt(NOW);
+        flushAndClear();
+
+        assertThat(entityManager.find(Booking.class, booking.getId()).getStatus()).isEqualTo(expected);
+    }
+
+    @Test
+    void updatesEachBookingIndependently() {
+        Booking departing = booking(10L, TourStatus.BOOKED, NOW.minusHours(1), NOW.plusDays(1));
+        Booking arriving = booking(20L, TourStatus.DEPARTED, NOW.minusDays(2), NOW.minusHours(1));
+        Booking upcoming = booking(30L, TourStatus.BOOKED, NOW.plusDays(1), NOW.plusDays(2));
+        flushAndClear();
+
+        updateTourProgressStatusesAt(NOW);
+        flushAndClear();
+
+        assertThat(entityManager.find(Booking.class, departing.getId()).getStatus()).isEqualTo(TourStatus.DEPARTED);
+        assertThat(entityManager.find(Booking.class, arriving.getId()).getStatus()).isEqualTo(TourStatus.ARRIVED);
+        assertThat(entityManager.find(Booking.class, upcoming.getId()).getStatus()).isEqualTo(TourStatus.BOOKED);
+    }
+
+    /**
+     * 기준 시각을 받는 오버로드는 package-private이라 프록시를 거치지 않고 실제 객체에서 호출한다.
+     * 트랜잭션은 테스트의 @Transactional을 사용한다.
+     */
+    private void updateTourProgressStatusesAt(LocalDateTime now) {
+        AdminBookingService target = AopTestUtils.getTargetObject(service);
+        target.updateTourProgressStatuses(now);
+    }
+
+    private Booking booking(Long userId, TourStatus status, LocalDateTime startAt, LocalDateTime endAt) {
+        return persist(Booking.builder().tour(tour).userId(userId).tourStyleId(1L)
+                .tourStyleType(TourStyleType.CLASSIC).hotelOption(hotel).foodOption(food)
+                .totalPrice(200000).participantsCount(1).startAt(startAt).endAt(endAt).status(status).build());
     }
 
     private Booking booking(Long userId, TourStatus status) {
