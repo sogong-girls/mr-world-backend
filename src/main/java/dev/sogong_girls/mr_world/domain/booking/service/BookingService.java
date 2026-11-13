@@ -3,7 +3,9 @@ package dev.sogong_girls.mr_world.domain.booking.service;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -33,6 +35,8 @@ import dev.sogong_girls.mr_world.domain.tour.repository.HotelOptionRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.TourRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.TourStyleRepository;
 import dev.sogong_girls.mr_world.domain.tour.service.TourService;
+import dev.sogong_girls.mr_world.domain.user.entity.User;
+import dev.sogong_girls.mr_world.domain.user.repository.UserRepository;
 import dev.sogong_girls.mr_world.global.exception.BusinessErrorCode;
 import dev.sogong_girls.mr_world.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +45,15 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class BookingService {
     private static final int MIN_PARTICIPANTS = 3;
+    /**
+     * 단골(isRegular)이 되기 위한 최소 결제 완료 예약 수
+     */
+    private static final int MIN_PAID_BOOKINGS_FOR_REGULAR = 2;
+    /**
+     * 결제를 완료한 예약의 상태 (결제 후 출발, 도착 포함)
+     */
+    private static final Set<TourStatus> PAID_STATUSES = EnumSet.of(
+            TourStatus.BOOKED, TourStatus.DEPARTED, TourStatus.ARRIVED);
 
     private final BookingRepository bookingRepository;
     private final BookingAddonRepository bookingAddonRepository;
@@ -49,6 +62,7 @@ public class BookingService {
     private final TourStyleRepository tourStyleRepository;
     private final HotelOptionRepository hotelOptionRepository;
     private final FoodOptionRepository foodOptionRepository;
+    private final UserRepository userRepository;
     private final TourService tourService;
     private final SmsNotificationService smsNotificationService;
 
@@ -196,8 +210,26 @@ public class BookingService {
             throw new BusinessException(BusinessErrorCode.UNAUTHORIZED);
 
         checkPayable(booking);
+        updateRegularIfQualified(userId);
         booking.updatePaidAt();
         return bookingMapper.toResponse(booking);
+    }
+
+    /**
+     * 이번 결제를 포함해 결제 완료한 예약이 MIN_PAID_BOOKINGS_FOR_REGULAR건 이상이면 단골로 전환한다.
+     * 이번 예약의 결제 반영(updatePaidAt) 전에 호출해야 하며, 같은 사용자의 동시 결제가
+     * 서로의 결제를 놓치지 않도록 사용자 행에 비관적 락을 건다.
+     */
+    private void updateRegularIfQualified(Long userId) {
+        User user = userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+        if (Boolean.TRUE.equals(user.getIsRegular()))
+            return;
+
+        long paidBookings = bookingRepository.countByUserIdAndStatusIn(userId, PAID_STATUSES) + 1; // 이번 결제 포함
+        if (paidBookings >= MIN_PAID_BOOKINGS_FOR_REGULAR) {
+            user.updateIsRegular(true);
+        }
     }
 
     private TourStatus determineBookingStatus(BookingCreateRequest request) {
