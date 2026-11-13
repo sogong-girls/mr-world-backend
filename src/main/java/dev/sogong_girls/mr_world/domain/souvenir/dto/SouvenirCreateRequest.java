@@ -5,8 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record SouvenirCreateRequest(
-        @NotBlank String name,
-        String brand,
-        String description,
-        @NotNull @Min(0) Integer stockCount) {
+                @NotBlank String name,
+                String description,
+                @NotNull @Min(0) Integer stockCount) {
 }

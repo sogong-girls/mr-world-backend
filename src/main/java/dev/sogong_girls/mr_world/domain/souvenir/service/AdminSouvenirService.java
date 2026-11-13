@@ -61,7 +61,6 @@ public class AdminSouvenirService {
                     return new SouvenirStockResponse(
                             souvenir.getId(),
                             souvenir.getName(),
-                            souvenir.getBrand(),
                             souvenir.getDescription(),
                             souvenir.getStockCount(),
                             requiredCount,
@@ -83,7 +82,6 @@ public class AdminSouvenirService {
     public SouvenirResponse createSouvenir(SouvenirCreateRequest request) {
         Souvenir souvenir = souvenirRepository.save(Souvenir.builder()
                 .name(request.name())
-                .brand(request.brand())
                 .description(request.description())
                 .stockCount(request.stockCount())
                 .build());
@@ -96,7 +94,7 @@ public class AdminSouvenirService {
         Souvenir souvenir = souvenirRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
 
-        souvenir.updateInfo(request.name(), request.brand(), request.description());
+        souvenir.updateInfo(request.name(), request.description());
         return souvenirMapper.toResponse(souvenir);
     }
 
