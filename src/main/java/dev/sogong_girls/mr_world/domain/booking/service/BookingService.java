@@ -195,6 +195,7 @@ public class BookingService {
         if (!booking.getUserId().equals(userId))
             throw new BusinessException(BusinessErrorCode.UNAUTHORIZED);
 
+        checkPayable(booking);
         booking.updatePaidAt();
         return bookingMapper.toResponse(booking);
     }
