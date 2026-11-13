@@ -45,6 +45,8 @@ import dev.sogong_girls.mr_world.domain.tour.repository.FoodOptionRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.HotelOptionRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.TourRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.TourStyleRepository;
+import dev.sogong_girls.mr_world.domain.user.entity.User;
+import dev.sogong_girls.mr_world.domain.user.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 class TourServiceTest {
@@ -60,6 +62,8 @@ class TourServiceTest {
     AddonOptionRepository addonOptionRepository;
     @Mock
     SouvenirRepository souvenirRepository;
+    @Mock
+    UserRepository userRepository;
     @Mock
     TourMapper tourMapper;
     @Mock
@@ -114,7 +118,7 @@ class TourServiceTest {
         given(foodOptionRepository.findById(4L)).willReturn(Optional.of(food));
         PriceCalculateRequest request = new PriceCalculateRequest(2L, 3L, 4L, 2, List.of());
 
-        PriceResponse result = tourService.calculatePrice(1L, request);
+        PriceResponse result = tourService.calculatePrice(1L, null, request);
 
         assertThat(result).isEqualTo(new PriceResponse(expectedTotal, 0, expectedTotal));
     }
@@ -124,9 +128,109 @@ class TourServiceTest {
     void calculatesBookingPriceAddingOnlyOptionsAboveStyleGrade(TourStyleType styleType,
             HotelGrade hotelGrade, FoodType foodType, int expectedTotal) {
         PriceResponse result = tourService.calculatePriceByIds(Tour.builder().build(),
-                style(styleType), hotel(hotelGrade), food(foodType), List.of(), 2);
+                style(styleType), hotel(hotelGrade), food(foodType), List.of(), 2, null);
 
         assertThat(result).isEqualTo(new PriceResponse(expectedTotal, 0, expectedTotal));
+    }
+
+    // 단골 할인: 최종 금액 = 전체 금액 × (1 - regularDiscount)
+    // style(GRAND) + _3_STAR + LUNCHBOX, 2명 => 전체 금액 200,000
+
+    @Test
+    void appliesRegularDiscountToRequestedPriceForRegularUser() {
+        stubRequestedPriceOptions(discountedStyle(0.1f));
+        given(userRepository.findById(10L)).willReturn(Optional.of(user(true)));
+
+        PriceResponse result = tourService.calculatePrice(1L, 10L, priceRequest());
+
+        assertThat(result).isEqualTo(new PriceResponse(200000, 20000, 180000));
+    }
+
+    @Test
+    void doesNotApplyRegularDiscountToRequestedPriceForNonRegularUser() {
+        stubRequestedPriceOptions(discountedStyle(0.1f));
+        given(userRepository.findById(10L)).willReturn(Optional.of(user(false)));
+
+        PriceResponse result = tourService.calculatePrice(1L, 10L, priceRequest());
+
+        assertThat(result).isEqualTo(new PriceResponse(200000, 0, 200000));
+    }
+
+    @Test
+    void doesNotApplyRegularDiscountToRequestedPriceForAnonymousUser() {
+        stubRequestedPriceOptions(discountedStyle(0.1f));
+
+        PriceResponse result = tourService.calculatePrice(1L, null, priceRequest());
+
+        assertThat(result).isEqualTo(new PriceResponse(200000, 0, 200000));
+        then(userRepository).shouldHaveNoInteractions();
+    }
+
+    @Test
+    void appliesRegularDiscountToBookingPriceForRegularUser() {
+        given(userRepository.findById(10L)).willReturn(Optional.of(user(true)));
+
+        PriceResponse result = tourService.calculatePriceByIds(Tour.builder().build(),
+                discountedStyle(0.15f), hotel(_3_STAR), food(LUNCHBOX), List.of(), 2, 10L);
+
+        assertThat(result).isEqualTo(new PriceResponse(200000, 30000, 170000));
+    }
+
+    @Test
+    void doesNotApplyRegularDiscountWhenUserDoesNotExist() {
+        given(userRepository.findById(10L)).willReturn(Optional.empty());
+
+        PriceResponse result = tourService.calculatePriceByIds(Tour.builder().build(),
+                discountedStyle(0.1f), hotel(_3_STAR), food(LUNCHBOX), List.of(), 2, 10L);
+
+        assertThat(result).isEqualTo(new PriceResponse(200000, 0, 200000));
+    }
+
+    @Test
+    void skipsUserLookupWhenStyleHasNoRegularDiscount() {
+        PriceResponse nullRate = tourService.calculatePriceByIds(Tour.builder().build(),
+                discountedStyle(null), hotel(_3_STAR), food(LUNCHBOX), List.of(), 2, 10L);
+        PriceResponse zeroRate = tourService.calculatePriceByIds(Tour.builder().build(),
+                discountedStyle(0f), hotel(_3_STAR), food(LUNCHBOX), List.of(), 2, 10L);
+
+        assertThat(nullRate).isEqualTo(new PriceResponse(200000, 0, 200000));
+        assertThat(zeroRate).isEqualTo(new PriceResponse(200000, 0, 200000));
+        then(userRepository).shouldHaveNoInteractions();
+    }
+
+    @Test
+    void roundsDiscountedPriceHalfUpToWon() {
+        // 100,005 × 0.9 = 90,004.5 => 90,005
+        TourStyle style = TourStyle.builder().tourId(1L).type(GRAND).basePrice(100005)
+                .regularDiscount(0.1f).build();
+        given(userRepository.findById(10L)).willReturn(Optional.of(user(true)));
+
+        PriceResponse result = tourService.calculatePriceByIds(Tour.builder().build(),
+                style, hotel(_3_STAR), food(LUNCHBOX), List.of(), 1, 10L);
+
+        assertThat(result).isEqualTo(new PriceResponse(100005, 10000, 90005));
+    }
+
+    private void stubRequestedPriceOptions(TourStyle style) {
+        given(tourRepository.findById(1L)).willReturn(Optional.of(Tour.builder().build()));
+        given(tourStyleRepository.findById(2L)).willReturn(Optional.of(style));
+        given(hotelOptionRepository.findById(3L)).willReturn(Optional.of(hotel(_3_STAR)));
+        given(foodOptionRepository.findById(4L)).willReturn(Optional.of(food(LUNCHBOX)));
+    }
+
+    private PriceCalculateRequest priceRequest() {
+        return new PriceCalculateRequest(2L, 3L, 4L, 2, List.of());
+    }
+
+    private TourStyle discountedStyle(Float regularDiscount) {
+        return TourStyle.builder().tourId(1L).type(GRAND).basePrice(100000)
+                .regularDiscount(regularDiscount).build();
+    }
+
+    private User user(boolean isRegular) {
+        User user = User.builder().loginId("user").build();
+        user.updateIsRegular(isRegular);
+        return user;
     }
 
     private TourStyle style(TourStyleType type) {

@@ -86,7 +86,7 @@ public class BookingService {
         // 금액 및 상태 결정
         PriceResponse price = tourService.calculatePriceByIds(tour,
                 options.style(), options.hotel(), options.food(),
-                options.addonOptions(), request.participantsCount());
+                options.addonOptions(), request.participantsCount(), userId);
 
         TourStatus status = determineBookingStatus(request);
 
@@ -180,7 +180,7 @@ public class BookingService {
 
         PriceResponse price = tourService.calculatePriceByIds(booking.getTour(),
                 options.style(), options.hotel(), options.food(),
-                options.addonOptions(), booking.getParticipantsCount());
+                options.addonOptions(), booking.getParticipantsCount(), booking.getUserId());
 
         booking.updateOptions(null, null, null, null, price.totalPrice(), price.discountPrice());
 
