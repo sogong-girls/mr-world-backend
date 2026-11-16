@@ -51,16 +51,18 @@ public class SmsNotificationService {
 
     @Transactional
     public List<SmsNotificationResponse> createNotifications(Booking booking) {
+
+        User user = userRepository.findById(booking.getUserId())
+                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
+
         List<SmsNotification> notifications = new ArrayList<>();
         if (booking.getStatus() == TourStatus.PENDING) {
             notifications.add(SmsNotification.builder()
                     .bookingId(booking.getId())
+                    .phoneNumber(user.getPhoneNumber())
                     .message("예약이 확정되었습니다. 결제를 진행해 주세요.")
                     .build());
         }
-
-        User user = userRepository.findById(booking.getUserId())
-                .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
 
         notifications.add(SmsNotification.builder()
                 .bookingId(booking.getId())
