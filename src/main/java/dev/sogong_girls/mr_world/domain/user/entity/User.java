@@ -1,6 +1,8 @@
 package dev.sogong_girls.mr_world.domain.user.entity;
 
 import dev.sogong_girls.mr_world.domain.user.enums.Role;
+import dev.sogong_girls.mr_world.global.exception.BusinessErrorCode;
+import dev.sogong_girls.mr_world.global.exception.BusinessException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -55,7 +57,7 @@ public class User {
         this.password = password;
         this.role = role;
         this.name = name;
-        this.phoneNumber = phoneNumber;
+        this.phoneNumber = formatPhoneNumber(phoneNumber);
         this.address = address;
         this.isRegular = false;
     }
@@ -64,7 +66,7 @@ public class User {
         if (name != null)
             this.name = name;
         if (phoneNumber != null)
-            this.phoneNumber = phoneNumber;
+            this.phoneNumber = formatPhoneNumber(phoneNumber);
         if (address != null)
             this.address = address;
     }
@@ -76,5 +78,16 @@ public class User {
 
     public void updateRefreshTokenHash(String refreshTokenHash) {
         this.refreshTokenHash = refreshTokenHash;
+    }
+
+    // 01012345678, 010-1234-5678 등 → 821012345678 형식으로 정규화
+    private static String formatPhoneNumber(String phoneNumber) {
+        if (phoneNumber == null)
+            return null;
+        String digits = phoneNumber.replaceAll("\\D", "");
+        if (digits.length() == 11 && digits.startsWith("010")) {
+            return "82" + digits.substring(1);
+        }
+        throw new BusinessException(BusinessErrorCode.INVALID_INPUT, "전화번호 형식이 잘못되었습니다.");
     }
 }
