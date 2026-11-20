@@ -46,11 +46,9 @@ public class SmsNotificationService {
     private final SmsNotificationMapper smsNotificationMapper;
     private final AppProperties properties;
 
-    @Scheduled(cron = "0 0 * * * *")
-    public void checkNotificationsSendDue() {
-        List<SmsNotification> targets = new ArrayList<>();
-        targets.addAll(smsNotificationRepository.findUnsentForUnpaidBookings(TourStatus.CONFIRMED));
-        targets.addAll(smsNotificationRepository.findAllBySentAtIsNullAndSendDueLessThanEqual(LocalDateTime.now()));
+    @Scheduled(cron = "0 * * * * *") // 1분마다 확인
+    public void checkPaymentNotifications() {
+        List<SmsNotification> targets = smsNotificationRepository.findUnsentForUnpaidBookings(TourStatus.CONFIRMED);
 
         int succeeded = 0;
         for (SmsNotification notification : targets) {
@@ -66,7 +64,30 @@ public class SmsNotificationService {
         }
 
         if (!targets.isEmpty())
-            log.info("[SMS] 정기 발송 완료 | 대상 {}건, 성공 {}건, 실패 {}건",
+            log.info("[SMS] 결제 알림 정기 발송 완료 | 대상 {}건, 성공 {}건, 실패 {}건",
+                    targets.size(), succeeded, targets.size() - succeeded);
+    }
+
+    @Scheduled(cron = "0 0 * * * *") // 1시간마다 확인
+    public void checkDepartureNotifications() {
+        List<SmsNotification> targets = smsNotificationRepository
+                .findAllBySentAtIsNullAndSendDueLessThanEqual(LocalDateTime.now());
+
+        int succeeded = 0;
+        for (SmsNotification notification : targets) {
+            // 한 건이 실패해도 나머지는 계속 보낸다. 실패한 건은 sentAt이 비어 있으니 다음 회차에 다시 시도된다
+            try {
+                if (sendNoticeDev(notification))
+                    succeeded++;
+            } catch (RestClientException e) {
+                // 응답·실패 내용은 sendNoticeDev에서 이미 남겼다
+            } catch (RuntimeException e) {
+                log.error("[SMS] 전송 중 예상치 못한 오류 | notificationId={}", notification.getId(), e);
+            }
+        }
+
+        if (!targets.isEmpty())
+            log.info("[SMS] 출발 24시간 전 알림 정기 발송 완료 | 대상 {}건, 성공 {}건, 실패 {}건",
                     targets.size(), succeeded, targets.size() - succeeded);
     }
 
@@ -77,13 +98,11 @@ public class SmsNotificationService {
                 .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
 
         List<SmsNotification> notifications = new ArrayList<>();
-        if (booking.getStatus() == TourStatus.PENDING) {
-            notifications.add(SmsNotification.builder()
-                    .bookingId(booking.getId())
-                    .phoneNumber(user.getPhoneNumber())
-                    .message("예약이 확정되었습니다. 결제를 진행해 주세요.")
-                    .build());
-        }
+        notifications.add(SmsNotification.builder()
+                .bookingId(booking.getId())
+                .phoneNumber(user.getPhoneNumber())
+                .message("예약이 확정되었습니다. 결제를 진행해 주세요.")
+                .build());
 
         notifications.add(SmsNotification.builder()
                 .bookingId(booking.getId())

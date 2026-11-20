@@ -18,6 +18,7 @@ public interface SmsNotificationRepository extends JpaRepository<SmsNotification
                 SELECT s
                 FROM SmsNotification s
                 WHERE s.sentAt IS NULL
+                AND s.sendDue IS NULL
                 AND EXISTS (
                     SELECT b.id
                     FROM Booking b

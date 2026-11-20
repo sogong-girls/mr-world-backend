@@ -10,6 +10,9 @@ spring:
         show-sql: false
 
 app:
+    # 테스트 중 정기 작업이 돌면 .env의 실제 키로 SMS가 나갈 수 있어서 끈다
+    scheduling:
+        enabled: false
     security:
         jwt:
             secret-key: test-only-secret-key-with-at-least-32-bytes

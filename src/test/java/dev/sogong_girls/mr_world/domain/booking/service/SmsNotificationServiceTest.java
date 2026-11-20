@@ -40,7 +40,8 @@ class SmsNotificationServiceTest {
         willThrow(new IllegalStateException("unexpected")).given(service).sendNoticeDev(broken);
         willReturn(true).given(service).sendNoticeDev(ok);
 
-        service.checkNotificationsSendDue();
+        service.checkPaymentNotifications();
+        service.checkDepartureNotifications();
 
         then(service).should().sendNoticeDev(rejected);
         then(service).should().sendNoticeDev(broken);
