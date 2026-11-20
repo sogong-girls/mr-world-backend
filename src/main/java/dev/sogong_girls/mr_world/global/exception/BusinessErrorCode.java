@@ -12,6 +12,7 @@ public enum BusinessErrorCode {
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "ID 또는 비밀번호가 잘못되었습니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
     NOT_FOUND(HttpStatus.NOT_FOUND, "대상을 찾을 수 없습니다."),
+    METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "지원하지 않는 HTTP 메서드입니다."),
     DUPLICATE_ID(HttpStatus.CONFLICT, "이미 존재하는 ID입니다."),
     ALREADY_PAID(HttpStatus.CONFLICT, "이미 결제된 예약입니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다.");

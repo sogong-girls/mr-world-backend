@@ -19,6 +19,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import dev.sogong_girls.mr_world.global.exception.BusinessErrorCode;
+import dev.sogong_girls.mr_world.global.logging.RequestLoggingFilter;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -56,10 +57,14 @@ public class SecurityConfig {
                                                 .requestMatchers(HttpMethod.POST, "/api/tours/*/price").permitAll()
                                                 .anyRequest().authenticated())
                                 .exceptionHandling(exceptions -> exceptions
-                                                .authenticationEntryPoint((request, response, exception) -> writeError(
-                                                                response, BusinessErrorCode.UNAUTHORIZED))
-                                                .accessDeniedHandler((request, response, exception) -> writeError(
-                                                                response, BusinessErrorCode.FORBIDDEN)))
+                                                .authenticationEntryPoint((request, response, exception) -> {
+                                                        RequestLoggingFilter.recordError(request, exception);
+                                                        writeError(response, BusinessErrorCode.UNAUTHORIZED);
+                                                })
+                                                .accessDeniedHandler((request, response, exception) -> {
+                                                        RequestLoggingFilter.recordError(request, exception);
+                                                        writeError(response, BusinessErrorCode.FORBIDDEN);
+                                                }))
                                 .addFilterBefore(new JwtAuthenticationFilter(tokenProvider),
                                                 UsernamePasswordAuthenticationFilter.class)
                                 .build();
