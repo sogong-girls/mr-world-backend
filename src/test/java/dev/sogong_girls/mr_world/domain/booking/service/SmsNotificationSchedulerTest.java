@@ -53,8 +53,9 @@ import dev.sogong_girls.mr_world.global.config.AppProperties;
 @SpringBootTest
 @ActiveProfiles("test")
 class SmsNotificationSchedulerTest {
-    private static final String PAYMENT_MESSAGE = "예약이 확정되었습니다. 결제를 진행해 주세요.";
-    private static final String DEPARTURE_MESSAGE = "여행 출발 24시간 전 안내입니다.";
+    // 메시지 문구가 바뀌어도 테스트가 깨지지 않도록 종류로 구분한다 (결제 알림만 sendDue가 없다)
+    private static final String PAYMENT = "PAYMENT";
+    private static final String DEPARTURE = "DEPARTURE";
 
     @Autowired
     SmsNotificationRepository smsNotificationRepository;
@@ -74,7 +75,7 @@ class SmsNotificationSchedulerTest {
     AppProperties appProperties;
 
     SmsNotificationService service;
-    /** 발송된 문자: "bookingId:메시지" */
+    /** 발송된 문자: "bookingId:종류" */
     List<String> sent = new ArrayList<>();
 
     Tour tour;
@@ -88,7 +89,7 @@ class SmsNotificationSchedulerTest {
                 smsNotificationMapper, appProperties));
         willAnswer(invocation -> {
             SmsNotification notification = invocation.getArgument(0);
-            sent.add(notification.getBookingId() + ":" + notification.getMessage());
+            sent.add(notification.getBookingId() + ":" + (notification.getSendDue() == null ? PAYMENT : DEPARTURE));
             smsNotificationRepository.markSent(notification.getId(), LocalDateTime.now());
             return true;
         }).given(service).sendNoticeDev(any());
@@ -127,7 +128,7 @@ class SmsNotificationSchedulerTest {
         service.checkPaymentNotifications();
 
         // 출발 24시간 전 안내는 아직 보낼 때가 아니므로 나가면 안 된다
-        assertThat(sent).containsExactly(booking.getId() + ":" + PAYMENT_MESSAGE);
+        assertThat(sent).containsExactly(booking.getId() + ":" + PAYMENT);
     }
 
     @Test
@@ -152,7 +153,7 @@ class SmsNotificationSchedulerTest {
         bookingRepository.save(booking);
         service.checkPaymentNotifications();
 
-        assertThat(sent).contains(booking.getId() + ":" + PAYMENT_MESSAGE);
+        assertThat(sent).contains(booking.getId() + ":" + PAYMENT);
     }
 
     @Test
@@ -183,7 +184,22 @@ class SmsNotificationSchedulerTest {
         service.checkDepartureNotifications();
 
         // 결제 알림(sendDue 없음)은 출발 알림 작업에서 나가면 안 된다
-        assertThat(sent).containsExactly(soon.getId() + ":" + DEPARTURE_MESSAGE);
+        assertThat(sent).containsExactly(soon.getId() + ":" + DEPARTURE);
+    }
+
+    // ---------- 메시지 내용 ----------
+
+    @Test
+    void paymentMessageShowsTourDatesAsYyyyMmDd() {
+        // 연말에 출발해 해를 넘기는 투어: 주 기준 연도(YYYY) 같은 형식 오류가 있으면 연도가 틀어진다
+        Booking booking = bookingWithNotifications(TourStatus.CONFIRMED, LocalDateTime.of(2026, 12, 30, 9, 0));
+
+        assertThat(smsNotificationRepository.findAll())
+                .filteredOn(notification -> notification.getBookingId().equals(booking.getId())
+                        && notification.getSendDue() == null)
+                .singleElement()
+                .extracting(SmsNotification::getMessage)
+                .isEqualTo("2026-12-30~2027-01-01 Test tour 예약이 확정되었습니다. 결제를 진행해 주세요.");
     }
 
     @Test

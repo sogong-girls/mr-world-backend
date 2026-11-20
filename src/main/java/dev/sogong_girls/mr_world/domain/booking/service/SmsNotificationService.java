@@ -1,6 +1,7 @@
 package dev.sogong_girls.mr_world.domain.booking.service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -97,18 +98,22 @@ public class SmsNotificationService {
         User user = userRepository.findById(booking.getUserId())
                 .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
 
+        String startAt = booking.getStartAt().format(DateTimeFormatter.ISO_LOCAL_DATE);
+        String endAt = booking.getEndAt().format(DateTimeFormatter.ISO_LOCAL_DATE);
+        String tourName = booking.getTour().getName();
+
         List<SmsNotification> notifications = new ArrayList<>();
         notifications.add(SmsNotification.builder()
                 .bookingId(booking.getId())
                 .phoneNumber(user.getPhoneNumber())
-                .message("예약이 확정되었습니다. 결제를 진행해 주세요.")
+                .message(String.format("%s~%s %s 예약이 확정되었습니다. 결제를 진행해 주세요.", startAt, endAt, tourName))
                 .build());
 
         notifications.add(SmsNotification.builder()
                 .bookingId(booking.getId())
                 .phoneNumber(user.getPhoneNumber())
                 .sendDue(booking.getStartAt().minusHours(24))
-                .message("여행 출발 24시간 전 안내입니다.")
+                .message(String.format("%s~%s %s 여행 출발 24시간 전 안내입니다.", startAt, endAt, tourName))
                 .build());
 
         return smsNotificationMapper.toResponses(smsNotificationRepository.saveAll(notifications));
