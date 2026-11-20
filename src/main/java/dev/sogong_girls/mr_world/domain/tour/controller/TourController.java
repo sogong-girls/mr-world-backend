@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import dev.sogong_girls.mr_world.domain.tour.dto.PriceCalculateRequest;
 import dev.sogong_girls.mr_world.domain.tour.dto.PriceResponse;
 import dev.sogong_girls.mr_world.domain.tour.dto.TourDetailResponse;
-import dev.sogong_girls.mr_world.domain.tour.dto.TourResponse;
+import dev.sogong_girls.mr_world.domain.tour.dto.TourListResponse;
 import dev.sogong_girls.mr_world.domain.tour.service.TourService;
 import dev.sogong_girls.mr_world.global.security.JwtTokenProvider.JwtPrincipal;
 import jakarta.validation.Valid;
@@ -25,7 +25,7 @@ public class TourController {
     private final TourService service;
 
     @GetMapping("/api/tours")
-    public ResponseEntity<List<TourResponse>> getTourList() {
+    public ResponseEntity<List<TourListResponse>> getTourList() {
         return ResponseEntity.ok(service.getTourList());
     }
 

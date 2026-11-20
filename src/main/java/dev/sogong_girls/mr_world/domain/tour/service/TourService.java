@@ -3,17 +3,22 @@ package dev.sogong_girls.mr_world.domain.tour.service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
 import dev.sogong_girls.mr_world.domain.souvenir.dto.SouvenirResponse;
+import dev.sogong_girls.mr_world.domain.souvenir.entity.Souvenir;
 import dev.sogong_girls.mr_world.domain.souvenir.mapper.SouvenirMapper;
 import dev.sogong_girls.mr_world.domain.souvenir.repository.SouvenirRepository;
 import dev.sogong_girls.mr_world.domain.tour.dto.PriceCalculateRequest;
 import dev.sogong_girls.mr_world.domain.tour.dto.PriceCalculateRequest.AddonRequest;
 import dev.sogong_girls.mr_world.domain.tour.dto.PriceResponse;
 import dev.sogong_girls.mr_world.domain.tour.dto.TourDetailResponse;
-import dev.sogong_girls.mr_world.domain.tour.dto.TourResponse;
+import dev.sogong_girls.mr_world.domain.tour.dto.TourListResponse;
 import dev.sogong_girls.mr_world.domain.tour.entity.AddonOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.FoodOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.HotelOption;
@@ -23,6 +28,7 @@ import dev.sogong_girls.mr_world.domain.tour.mapper.TourMapper;
 import dev.sogong_girls.mr_world.domain.tour.repository.AddonOptionRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.FoodOptionRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.HotelOptionRepository;
+import dev.sogong_girls.mr_world.domain.tour.repository.TourLowestPrice;
 import dev.sogong_girls.mr_world.domain.tour.repository.TourRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.TourStyleRepository;
 import dev.sogong_girls.mr_world.domain.user.entity.User;
@@ -45,8 +51,28 @@ public class TourService {
     private final TourMapper tourMapper;
     private final SouvenirMapper souvenirMapper;
 
-    public List<TourResponse> getTourList() {
-        return tourMapper.toResponses(tourRepository.findAll());
+    /**
+     * 투어 수와 상관없이 쿼리 3번(투어, 투어별 최저가, 기념품)으로 목록을 만든다.
+     */
+    public List<TourListResponse> getTourList() {
+        List<Tour> tours = tourRepository.findAll();
+
+        Map<Long, Integer> lowestPriceByTourId = tourStyleRepository.findLowestPricesGroupByTourId().stream()
+                .collect(Collectors.toMap(TourLowestPrice::getTourId, TourLowestPrice::getLowestPrice));
+
+        Set<Long> souvenirIds = tours.stream()
+                .map(Tour::getSouvenirId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, SouvenirResponse> souvenirById = souvenirRepository.findAllById(souvenirIds).stream()
+                .collect(Collectors.toMap(Souvenir::getId, souvenirMapper::toResponse));
+
+        return tours.stream()
+                .map(tour -> tourMapper.toListResponse(
+                        tour,
+                        lowestPriceByTourId.get(tour.getId()),
+                        tour.getSouvenirId() == null ? null : souvenirById.get(tour.getSouvenirId())))
+                .toList();
     }
 
     public TourDetailResponse getTour(Long id) {

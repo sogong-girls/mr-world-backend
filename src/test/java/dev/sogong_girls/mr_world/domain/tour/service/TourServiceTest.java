@@ -11,9 +11,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -24,6 +27,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import dev.sogong_girls.mr_world.domain.souvenir.dto.SouvenirResponse;
 import dev.sogong_girls.mr_world.domain.souvenir.entity.Souvenir;
@@ -43,6 +47,7 @@ import dev.sogong_girls.mr_world.domain.tour.mapper.TourMapper;
 import dev.sogong_girls.mr_world.domain.tour.repository.AddonOptionRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.FoodOptionRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.HotelOptionRepository;
+import dev.sogong_girls.mr_world.domain.tour.repository.TourLowestPrice;
 import dev.sogong_girls.mr_world.domain.tour.repository.TourRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.TourStyleRepository;
 import dev.sogong_girls.mr_world.domain.user.entity.User;
@@ -83,6 +88,33 @@ class TourServiceTest {
         TourDetailResponse result = tourService.getTour(1L);
 
         assertThat(result.souvenir()).isEqualTo(souvenirResponse);
+    }
+
+    @Test
+    void tourListIncludesLowestPriceAndSouvenirWithoutPerTourQueries() {
+        Tour withSouvenir = Tour.builder().souvenirId(5L).build();
+        Tour withoutSouvenir = Tour.builder().build();
+        ReflectionTestUtils.setField(withSouvenir, "id", 1L);
+        ReflectionTestUtils.setField(withoutSouvenir, "id", 2L);
+        Souvenir souvenir = Souvenir.builder().name("Keyring").description("Desc").stockCount(10).build();
+        ReflectionTestUtils.setField(souvenir, "id", 5L);
+        SouvenirResponse souvenirResponse = new SouvenirResponse(5L, "Keyring", "Desc", 10);
+
+        given(tourRepository.findAll()).willReturn(List.of(withSouvenir, withoutSouvenir));
+        given(tourStyleRepository.findLowestPricesGroupByTourId())
+                .willReturn(List.<TourLowestPrice>of(new LowestPrice(1L, 200000)));
+        given(souvenirRepository.findAllById(Set.of(5L))).willReturn(List.of(souvenir));
+        given(souvenirMapper.toResponse(souvenir)).willReturn(souvenirResponse);
+
+        tourService.getTourList();
+
+        then(tourMapper).should().toListResponse(withSouvenir, 200000, souvenirResponse);
+        then(tourMapper).should().toListResponse(withoutSouvenir, null, null);
+        then(tourStyleRepository).should(never()).findAllByTourId(any());
+        then(souvenirRepository).should(never()).findById(any());
+    }
+
+    private record LowestPrice(Long getTourId, Integer getLowestPrice) implements TourLowestPrice {
     }
 
     @Test
