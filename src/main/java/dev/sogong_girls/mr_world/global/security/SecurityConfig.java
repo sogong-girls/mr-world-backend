@@ -25,58 +25,64 @@ import jakarta.servlet.http.HttpServletResponse;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtTokenProvider tokenProvider,
-            CorsConfigurationSource corsConfigurationSource) throws Exception {
-        return http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource))
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .requestCache(requestCache -> requestCache.disable())
-                .formLogin(formLogin -> formLogin.disable())
-                .httpBasic(httpBasic -> httpBasic.disable())
-                .logout(logout -> logout.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login",
-                                "/api/auth/refresh", "/api/auth/logout").permitAll()
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/tours", "/api/tours/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/tours/*/price").permitAll()
-                        .anyRequest().authenticated())
-                .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint((request, response, exception) ->
-                                writeError(response, BusinessErrorCode.UNAUTHORIZED))
-                        .accessDeniedHandler((request, response, exception) ->
-                                writeError(response, BusinessErrorCode.FORBIDDEN)))
-                .addFilterBefore(new JwtAuthenticationFilter(tokenProvider),
-                        UsernamePasswordAuthenticationFilter.class)
-                .build();
-    }
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtTokenProvider tokenProvider,
+                        CorsConfigurationSource corsConfigurationSource) throws Exception {
+                return http
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource))
+                                .csrf(csrf -> csrf.disable())
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .requestCache(requestCache -> requestCache.disable())
+                                .formLogin(formLogin -> formLogin.disable())
+                                .httpBasic(httpBasic -> httpBasic.disable())
+                                .logout(logout -> logout.disable())
+                                .authorizeHttpRequests(auth -> auth
+                                                .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login",
+                                                                "/api/auth/refresh", "/api/auth/logout")
+                                                .permitAll()
+                                                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**",
+                                                                "/swagger-ui.html")
+                                                .permitAll()
+                                                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.GET, "/api/tours", "/api/tours/**")
+                                                .permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/tours/*/price").permitAll()
+                                                .anyRequest().authenticated())
+                                .exceptionHandling(exceptions -> exceptions
+                                                .authenticationEntryPoint((request, response, exception) -> writeError(
+                                                                response, BusinessErrorCode.UNAUTHORIZED))
+                                                .accessDeniedHandler((request, response, exception) -> writeError(
+                                                                response, BusinessErrorCode.FORBIDDEN)))
+                                .addFilterBefore(new JwtAuthenticationFilter(tokenProvider),
+                                                UsernamePasswordAuthenticationFilter.class)
+                                .build();
+        }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource(
-            @Value("${app.security.allowed-origins}") List<String> allowedOrigins) {
-        var configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(allowedOrigins);
-        configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Content-Type"));
-        configuration.setAllowCredentials(true);
-        var source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource(
+                        @Value("${app.security.allowed-origins}") List<String> allowedOrigins) {
+                var configuration = new CorsConfiguration();
+                configuration.setAllowedOriginPatterns(allowedOrigins);
+                configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"));
+                configuration.setAllowedHeaders(List.of("Content-Type"));
+                configuration.setAllowCredentials(true);
+                var source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", configuration);
+                return source;
+        }
 
-    private static void writeError(HttpServletResponse response, BusinessErrorCode errorCode) throws java.io.IOException {
-        response.setStatus(errorCode.getStatus().value());
-        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        response.setContentType("text/plain;charset=UTF-8");
-        response.getWriter().write(errorCode.getMessage());
-    }
+        private static void writeError(HttpServletResponse response, BusinessErrorCode errorCode)
+                        throws java.io.IOException {
+                response.setStatus(errorCode.getStatus().value());
+                response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write(errorCode.getMessage());
+        }
 }

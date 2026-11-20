@@ -15,9 +15,9 @@ import dev.sogong_girls.mr_world.domain.user.dto.LoginRequest;
 import dev.sogong_girls.mr_world.domain.user.dto.SignupRequest;
 import dev.sogong_girls.mr_world.domain.user.dto.UserResponse;
 import dev.sogong_girls.mr_world.domain.user.service.AuthService;
+import dev.sogong_girls.mr_world.global.exception.BusinessException;
 import dev.sogong_girls.mr_world.global.security.JwtProperties;
 import dev.sogong_girls.mr_world.global.security.JwtTokenProvider.JwtTokenPair;
-import dev.sogong_girls.mr_world.global.exception.BusinessException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -75,7 +75,7 @@ public class AuthController {
         ResponseCookie cookie = ResponseCookie.from(name, value)
                 .httpOnly(true)
                 .secure(properties.cookieSecure())
-                .sameSite("Lax")
+                .sameSite("None")
                 .path(path)
                 .maxAge(maxAge)
                 .build();
