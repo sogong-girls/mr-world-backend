@@ -23,11 +23,11 @@ public interface SmsNotificationRepository extends JpaRepository<SmsNotification
                     SELECT b.id
                     FROM Booking b
                     WHERE b.id = s.bookingId
-                    AND b.status = :status
+                    AND b.status IN :statuses
                     AND b.paidAt IS NULL
                 )
             """)
-    List<SmsNotification> findUnsentForUnpaidBookings(@Param("status") TourStatus status);
+    List<SmsNotification> findUnsentForUnpaidBookings(@Param("statuses") List<TourStatus> statuses);
 
     List<SmsNotification> findAllBySentAtIsNullAndSendDueLessThanEqual(LocalDateTime sendDue);
 
