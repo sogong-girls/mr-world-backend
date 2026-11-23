@@ -26,4 +26,5 @@ jobs:
                       chmod +x gradlew
                       ./gradlew clean bootJar --no-daemon --max-workers=1
 
+                      sudo systemctl restart nginx
                       sudo systemctl restart mr-world-backend
