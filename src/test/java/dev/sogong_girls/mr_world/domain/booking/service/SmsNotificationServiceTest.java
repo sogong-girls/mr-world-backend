@@ -30,7 +30,8 @@ class SmsNotificationServiceTest {
         SmsNotification rejected = notification("rejected");
         SmsNotification broken = notification("broken");
         SmsNotification ok = notification("ok");
-        given(repository.findUnsentForUnpaidBookings(TourStatus.CONFIRMED)).willReturn(List.of(rejected));
+        given(repository.findUnsentForUnpaidBookings(List.of(TourStatus.CONFIRMED, TourStatus.BOOKED)))
+                .willReturn(List.of(rejected));
         given(repository.findAllBySentAtIsNullAndSendDueLessThanEqual(any())).willReturn(List.of(broken, ok));
 
         SmsNotificationService service = spy(new SmsNotificationService(repository,

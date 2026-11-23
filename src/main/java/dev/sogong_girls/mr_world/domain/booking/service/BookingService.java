@@ -46,6 +46,10 @@ import lombok.RequiredArgsConstructor;
 public class BookingService {
     private static final int MIN_PARTICIPANTS = 3;
     /**
+     * 허니문 투어의 예약 인원 (2인 전용 상품)
+     */
+    private static final int HONEYMOON_PARTICIPANTS = 2;
+    /**
      * 단골(isRegular)이 되기 위한 최소 결제 완료 예약 수
      */
     private static final int MIN_PAID_BOOKINGS_FOR_REGULAR = 2;
@@ -84,6 +88,7 @@ public class BookingService {
                 .orElseThrow(() -> new BusinessException(BusinessErrorCode.NOT_FOUND));
 
         validateBookingDate(tour, request.startAt(), request.endAt()); // 일수, 박수 및 시간이 실제 투어와 일치하는지 확인
+        validateParticipantsCount(tour, request.participantsCount());
 
         List<BookingCreateRequest.BookingAddonRequest> addonRequests = request.bookingAddons() == null ? List.of()
                 : request.bookingAddons();
@@ -102,7 +107,7 @@ public class BookingService {
                 options.style(), options.hotel(), options.food(),
                 options.addonOptions(), request.participantsCount(), userId);
 
-        TourStatus status = determineBookingStatus(request);
+        TourStatus status = determineBookingStatus(tour, request);
 
         Booking booking = bookingRepository.save(Booking.builder()
                 .tour(tour)
@@ -232,7 +237,12 @@ public class BookingService {
         }
     }
 
-    private TourStatus determineBookingStatus(BookingCreateRequest request) {
+    private TourStatus determineBookingStatus(Tour tour, BookingCreateRequest request) {
+        // 허니문 투어는 2인 전용 상품이므로 단독으로 확정
+        if (tour.getTourTheme() == TourTheme.HONEYMOON) {
+            return TourStatus.CONFIRMED;
+        }
+
         int totalParticipants = request.participantsCount();
         if (totalParticipants >= MIN_PARTICIPANTS) {
             return TourStatus.CONFIRMED;
@@ -268,6 +278,13 @@ public class BookingService {
         if (tour.getNights() == null || tour.getDays() == null
                 || tour.getNights() != nights || tour.getDays() != days) {
             throw new BusinessException(BusinessErrorCode.INVALID_INPUT, "투어 일수가 일치하지 않습니다.");
+        }
+    }
+
+    private void validateParticipantsCount(Tour tour, Integer participantsCount) {
+        if (tour.getTourTheme() == TourTheme.HONEYMOON
+                && (participantsCount == null || participantsCount != HONEYMOON_PARTICIPANTS)) {
+            throw new BusinessException(BusinessErrorCode.INVALID_INPUT, "허니문 투어는 2인 전용 상품입니다.");
         }
     }
 

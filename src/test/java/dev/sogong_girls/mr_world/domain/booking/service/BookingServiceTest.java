@@ -39,6 +39,7 @@ import dev.sogong_girls.mr_world.domain.tour.entity.HotelOption;
 import dev.sogong_girls.mr_world.domain.tour.entity.Tour;
 import dev.sogong_girls.mr_world.domain.tour.entity.TourStyle;
 import dev.sogong_girls.mr_world.domain.tour.enums.TourStyleType;
+import dev.sogong_girls.mr_world.domain.tour.enums.TourTheme;
 import dev.sogong_girls.mr_world.domain.tour.repository.AddonOptionRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.FoodOptionRepository;
 import dev.sogong_girls.mr_world.domain.tour.repository.HotelOptionRepository;
@@ -272,9 +273,52 @@ class BookingServiceTest {
         verify(smsNotificationService).createNotifications(booking);
     }
 
+    @Test
+    void confirmsTwoPersonHoneymoonBookingWithoutLookingUpPendingBookings() {
+        LocalDateTime startAt = LocalDateTime.of(2026, 12, 1, 9, 0);
+        LocalDateTime endAt = LocalDateTime.of(2026, 12, 2, 18, 0);
+        Tour tour = honeymoonTour(startAt, endAt);
+        stubBookingCreation(tour, 2, TourStyleType.GRAND);
+
+        bookingService.createBooking(10L, request(startAt, endAt));
+
+        ArgumentCaptor<Booking> captor = ArgumentCaptor.forClass(Booking.class);
+        verify(bookingRepository).save(captor.capture());
+        Booking booking = captor.getValue();
+        assertThat(booking.getStatus()).isEqualTo(TourStatus.CONFIRMED);
+        assertThat(booking.getPaymentDueAt()).isNotNull();
+        verifyNoMoreInteractions(bookingRepository);
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = { 1, 3, 4 })
+    void rejectsHoneymoonBookingUnlessExactlyTwoParticipants(int participants) {
+        LocalDateTime startAt = LocalDateTime.of(2026, 12, 1, 9, 0);
+        LocalDateTime endAt = LocalDateTime.of(2026, 12, 2, 18, 0);
+        given(tourRepository.findById(1L)).willReturn(Optional.of(honeymoonTour(startAt, endAt)));
+
+        assertThatThrownBy(() -> bookingService.createBooking(10L,
+                new BookingCreateRequest(1L, 2L, 3L, 4L, participants, startAt, endAt, List.of())))
+                .isInstanceOfSatisfying(BusinessException.class, exception -> {
+                    assertThat(exception.getErrorCode()).isEqualTo(BusinessErrorCode.INVALID_INPUT);
+                    assertThat(exception.getMessage()).isEqualTo("허니문 투어는 2인 전용 상품입니다.");
+                });
+        verifyNoInteractions(bookingRepository, bookingAddonRepository, tourStyleRepository, tourService,
+                smsNotificationService);
+    }
+
+    private Tour honeymoonTour(LocalDateTime startAt, LocalDateTime endAt) {
+        return withId(Tour.builder().tourTheme(TourTheme.HONEYMOON).nights(1).days(2)
+                .departureTime(startAt.toLocalTime()).arrivalTime(endAt.toLocalTime()).build(), 1L);
+    }
+
     private void stubBookingCreation(Tour tour, int participants) {
+        stubBookingCreation(tour, participants, TourStyleType.CLASSIC);
+    }
+
+    private void stubBookingCreation(Tour tour, int participants, TourStyleType styleType) {
         given(tourRepository.findById(1L)).willReturn(Optional.of(tour));
-        TourStyle style = withId(TourStyle.builder().tourId(1L).type(TourStyleType.CLASSIC).build(), 2L);
+        TourStyle style = withId(TourStyle.builder().tourId(1L).type(styleType).build(), 2L);
         HotelOption hotel = withId(HotelOption.builder().tourId(1L).build(), 3L);
         FoodOption food = withId(FoodOption.builder().tourId(1L).build(), 4L);
         given(tourStyleRepository.findById(2L)).willReturn(Optional.of(style));
