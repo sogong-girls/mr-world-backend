@@ -49,7 +49,7 @@ public class SmsNotificationService {
 
     @Scheduled(cron = "0 * * * * *") // 1분마다 확인
     public void checkPaymentNotifications() {
-        List<SmsNotification> targets = smsNotificationRepository.findUnsentForUnpaidBookings(TourStatus.CONFIRMED);
+        List<SmsNotification> targets = smsNotificationRepository.findUnsentForUnpaidBookings(List.of(TourStatus.CONFIRMED, TourStatus.BOOKED));
 
         int succeeded = 0;
         for (SmsNotification notification : targets) {
