@@ -24,7 +24,6 @@ public interface SmsNotificationRepository extends JpaRepository<SmsNotification
                     FROM Booking b
                     WHERE b.id = s.bookingId
                     AND b.status IN :statuses
-                    AND b.paidAt IS NULL
                 )
             """)
     List<SmsNotification> findUnsentForUnpaidBookings(@Param("statuses") List<TourStatus> statuses);
