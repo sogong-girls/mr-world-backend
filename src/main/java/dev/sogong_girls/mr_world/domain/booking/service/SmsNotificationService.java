@@ -49,7 +49,8 @@ public class SmsNotificationService {
 
     @Scheduled(cron = "0 * * * * *") // 1분마다 확인
     public void checkPaymentNotifications() {
-        List<SmsNotification> targets = smsNotificationRepository.findUnsentForUnpaidBookings(List.of(TourStatus.CONFIRMED, TourStatus.BOOKED));
+        List<SmsNotification> targets = smsNotificationRepository
+                .findUnsentForUnpaidBookings(List.of(TourStatus.CONFIRMED, TourStatus.BOOKED));
 
         int succeeded = 0;
         for (SmsNotification notification : targets) {
@@ -106,7 +107,8 @@ public class SmsNotificationService {
         notifications.add(SmsNotification.builder()
                 .bookingId(booking.getId())
                 .phoneNumber(user.getPhoneNumber())
-                .message(String.format("%s~%s %s 예약이 확정되었습니다. 결제를 진행해 주세요.", startAt, endAt, tourName))
+                .message(String.format("%s~%s %s 예약이 확정되었습니다.%s", startAt, endAt, tourName,
+                        booking.getStatus() == TourStatus.CONFIRMED ? " 결제를 진행해 주세요." : ""))
                 .build());
 
         notifications.add(SmsNotification.builder()
